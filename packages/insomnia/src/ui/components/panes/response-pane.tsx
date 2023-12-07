@@ -24,7 +24,7 @@ import { ResponseCookiesViewer } from '../viewers/response-cookies-viewer';
 import { ResponseHeadersViewer } from '../viewers/response-headers-viewer';
 import { ResponseTimelineViewer } from '../viewers/response-timeline-viewer';
 import { ResponseViewer } from '../viewers/response-viewer';
-import { ResponseVisualizeViewer } from '../viewers/response-visualizer';
+import { ResponseVisualizeViewer } from '../viewers/response-visualizer-viewer';
 import { BlankPane } from './blank-pane';
 import { Pane, PaneHeader } from './pane';
 import { PlaceholderResponsePane } from './placeholder-response-pane';
