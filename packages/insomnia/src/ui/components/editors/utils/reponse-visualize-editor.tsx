@@ -52,6 +52,8 @@ export const ResponseVisualizeEditor = () => {
   const patchRequest = useRequestPatcher();
   const uniqueKey = `${activeRequest._id}::response-visualizer-setting`;
 
+  console.log(activeRequestMeta.visualizeTemplate);
+
   const handleUpdateNunjucksPowerUserMode = useCallback(
     (value: boolean) => {
       patchRequestMeta(activeRequest._id, { visualizePowerUserMode: !value });
@@ -65,6 +67,14 @@ export const ResponseVisualizeEditor = () => {
     },
     [activeRequest._id, patchRequest]
   );
+
+  const handleRawValue = useCallback(
+    (rawValue: string) => {
+      patchRequestMeta(activeRequest._id, { visualizeTemplate: rawValue });
+    },
+    [activeRequest._id, patchRequestMeta]
+  );
+
   return (
     <Container>
       <div className="editor-header">
@@ -81,8 +91,8 @@ export const ResponseVisualizeEditor = () => {
         />
       </div>
       <RawEditor
-        onChange={rawValue => console.log(rawValue)}
-        content={''}
+        onChange={handleRawValue}
+        content={activeRequestMeta.visualizeTemplate || ''}
         contentType={'xml'}
         uniquenessKey={uniqueKey}
       />
