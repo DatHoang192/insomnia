@@ -2,6 +2,7 @@ import React, { useCallback } from 'react';
 import { useRouteLoaderData } from 'react-router-dom';
 import styled from 'styled-components';
 
+import { debounce } from '../../../../common/misc';
 import {
   useRequestMetaPatcher,
   useRequestPatcher,
@@ -51,6 +52,7 @@ export const ResponseVisualizeEditor = () => {
   const patchRequestMeta = useRequestMetaPatcher();
   const patchRequest = useRequestPatcher();
   const uniqueKey = `${activeRequest._id}::response-visualizer-setting`;
+  const DELAY_UPDATING_VISUALIZE_TEMPLATE = 2000;
 
   const handleUpdateVisualization = useCallback(
     (value: boolean) => {
@@ -77,7 +79,7 @@ export const ResponseVisualizeEditor = () => {
         />
       </div>
       <RawEditor
-        onChange={handleRawValue}
+        onChange={debounce(handleRawValue, DELAY_UPDATING_VISUALIZE_TEMPLATE)}
         content={activeRequestMeta.visualizeTemplate || ''}
         contentType={'xml'}
         uniquenessKey={uniqueKey}
