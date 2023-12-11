@@ -28,7 +28,7 @@ export const ResponseVisualizeViewer = () => {
             if (activeRequestMeta) {
                 const { visualizeTemplate } = activeRequestMeta;
                 try {
-                    tempBody = await handleRender(activeRequestMeta.visualizeTemplate || '');
+                    tempBody = await handleRender(visualizeTemplate || '');
                 } catch (err) {
                     tempBody = `<h4 style="color:red;">${err.message}</h4>`;
                 }
@@ -36,7 +36,7 @@ export const ResponseVisualizeViewer = () => {
             setResBody(encodeBody(tempBody));
         };
         loadFunc();
-    }, [activeRequestMeta, handleRender, state.renderKey, state.visualizeTemplate]);
+    }, [activeRequestMeta, handleRender]);
 
     return (
         // eslint-disable-next-line react/no-unknown-property
