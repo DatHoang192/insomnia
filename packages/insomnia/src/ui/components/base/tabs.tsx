@@ -190,7 +190,7 @@ const Tabs: FC<TabsProps> = props => {
     <StyledTabsContainer >
       <StyledTabList {...tabListProps} ref={ref} isNested={props.isNested} shouldRender={props.shouldRender}>
         {[...state.collection].map((item: Node<TabItemProps>) => {
-          const shouldRenderCondition = item.rendered === 'Visualizer' ? shouldRender ? true : false : true;
+          const shouldRenderCondition = item.rendered === 'Visualizer' ? !!shouldRender : true;
           return (
           <Tab
             key={item.key}
