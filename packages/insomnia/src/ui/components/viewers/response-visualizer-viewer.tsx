@@ -55,7 +55,7 @@ export const ResponseVisualizeViewer = () => {
             if (state.visualizeTemplate !== visualizeTemplate) {
                 let tempBody;
                 try {
-                    tempBody = await handleRender("{\"transactionID\":\"7218927f-aaaa-195d-98ae-bb8ce99ef57d\",\"status\":\"INIT_SUCCESS\",\"bodyMessage\":{\"id\":\"7218927f-aaaa-195d-98ae-bb8ce99ef57d\",\"initiatorCompany\":\"ZC47560393\",\"initiatorCode\":\"ZU47560390\",\"site\":{\"siteCode\":\"ZS1000000000\",\"name\":\"TestSite190110\",\"address\":{\"addressLine1\":\"line1\",\"addressLine2\":\"line2\",\"city\":\" London\",\"countryCode\":\"GBR\",\"postCode\":\"EC1 2BU\",\"state\":\"Greater London\",\"siteCoordinates\":null,\"administrativeAreaLevel1\":null,\"administrativeAreaLevel2\":null,\"administrativeAreaLevel3\":null,\"locality\":null}},\"org\":{\"orgCode\":\"ZC1000000000\",\"name\":\"TestOrg190110\",\"address\":{\"addressLine1\":\"line1\",\"addressLine2\":\"line2\",\"city\":\" London\",\"countryCode\":\"GBR\",\"postCode\":\"EC1 2BU\",\"state\":\"Greater London\",\"siteCoordinates\":null,\"administrativeAreaLevel1\":null,\"administrativeAreaLevel2\":null,\"administrativeAreaLevel3\":null,\"locality\":null},\"billingAddress\":{\"addressLine1\":\"line1\",\"addressLine2\":\"line2\",\"city\":\" London\",\"countryCode\":\"GBR\",\"postCode\":\"EC1 2BU\",\"state\":\"Greater London\",\"siteCoordinates\":null,\"administrativeAreaLevel1\":null,\"administrativeAreaLevel2\":null,\"administrativeAreaLevel3\":null,\"locality\":null}},\"userDTO\":{\"email\":\"Test190110@gmail.com\",\"firstName\":\"An\",\"lastName\":\"Nguyen\",\"usersEmailPreferredLang\":\"EN\"}}}" || '');
+                    tempBody = await handleRender(activeRequestMeta.visualizeTemplate || '');
                 } catch (err) {
                     tempBody = `<h4 style="color:red;">${err.message}</h4>`;
                 }
@@ -67,7 +67,7 @@ export const ResponseVisualizeViewer = () => {
             }
         };
         loadFunc();
-    }, []);
+    }, [activeRequestMeta, handleRender, state.renderKey, state.visualizeTemplate]);
 
     return (
         <div>
