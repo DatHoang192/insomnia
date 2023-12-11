@@ -23,7 +23,6 @@ export interface BaseRequestMeta {
   expandedAccordionKeys: Partial<Record<RequestAccordionKeys, boolean>>;
   // nc-dazzle-update
   visualizeTemplate: string | null;
-  visualizePowerUserMode: boolean | null;
 }
 
 export type RequestMeta = BaseModel & BaseRequestMeta;
@@ -46,7 +45,6 @@ export function init() {
     expandedAccordionKeys: {},
     // nc-dazzle-update
     visualizeTemplate: null,
-    visualizePowerUserMode: null,
   };
 }
 
