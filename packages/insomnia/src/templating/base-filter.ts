@@ -2,9 +2,11 @@ import nunjucks from 'nunjucks';
 
 import { database as db } from '../common/database';
 import * as models from '../models/index';
+import { BaseModel } from '../models/index';
+import { Workspace } from '../models/workspace';
 import { Plugin } from '../plugins';
 import * as pluginContexts from '../plugins/context';
-import { PluginTemplateFilter } from './extensions';
+import { PluginTemplateFilter, PluginTemplateFilterContext } from './extensions';
 import * as templating from './index';
 import { decodeEncoding } from './utils';
 
@@ -47,8 +49,8 @@ export default class BaseFilter {
   addFilter(nj: nunjucks.Environment) {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const _thisInstance = this;
-    nj.addFilter(this.getName(), function (...args: any[]) {
-      // eslint-disable-next-line no-useless-call
+    nj.addFilter(this.getName(), function(this: any, ...args: string[]) {
+    // TODO: will be left here until found a solution
       _thisInstance.asyncRun.call(_thisInstance, this, ...args);
     }, true);
     const njContext = (nj as any);
@@ -56,7 +58,7 @@ export default class BaseFilter {
     njContext.filtersList.push(this);
   }
 
-  run(ctx, strValue, ...args) {
+  run(ctx: PluginTemplateFilterContext, strValue: string, ...args: any[]) {
     return this._ft?.run(ctx, strValue, ...args);
   }
 
@@ -73,18 +75,18 @@ export default class BaseFilter {
     // Extract the rest of the args
     const args = runArgs
       .slice(0, runArgs.length - 1)
-      .filter(a => a !== EMPTY_ARG)
+      .filter((a: any) => a !== EMPTY_ARG)
       .map(decodeEncoding);
     const pluginData = this._plugin ? pluginContexts.store.init(this._plugin) : {};
     // Define a helper context with utils
-    const helperContext = {
+    const helperContext: PluginTemplateFilterContext = {
       ...pluginContexts.app.init(renderPurpose),
       ...pluginData,
-      ...pluginContexts.network.init(environmentId),
+      ...pluginContexts.network.init(),
       meta: renderMeta,
       context: renderContext,
       util: {
-        render: (str, extContext) => {
+        render: (str: string, extContext: object) => {
           let templateContext = {
             ...renderContext,
           };
@@ -101,7 +103,7 @@ export default class BaseFilter {
         models: {
           request: {
             getById: models.request.getById,
-            getAncestors: async request => {
+            getAncestors: async (request: BaseModel) => {
               const ancestors = await db.withAncestors(request, [
                 models.requestGroup.type,
                 models.workspace.type,
@@ -116,7 +118,7 @@ export default class BaseFilter {
             getByRequestId: models.oAuth2Token.getByParentId,
           },
           cookieJar: {
-            getOrCreateForWorkspace: workspace => {
+            getOrCreateForWorkspace: (workspace: Workspace) => {
               return models.cookieJar.getOrCreateForParentId(workspace._id);
             },
           },

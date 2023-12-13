@@ -98,7 +98,7 @@ export interface PluginTemplateFilterContext {
   };
   context: any;
   util: {
-    render: (str: string, extContext: string | object) => string | Promise<string | null>;
+    render: (str: string, extContext: object) => string | Promise<string | null>;
     models: {
       request: {
         getById: (id: string) => Promise<Request | null>;

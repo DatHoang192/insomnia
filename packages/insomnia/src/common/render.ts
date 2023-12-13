@@ -1,24 +1,25 @@
 import clone from 'clone';
 import orderedJSON from 'json-order';
+import jsonpath from 'jsonpath';
 
 import * as models from '../models';
+import { BaseModel } from '../models';
 import type { CookieJar } from '../models/cookie-jar';
 import type { Environment } from '../models/environment';
 import type { GrpcRequest, GrpcRequestBody } from '../models/grpc-request';
 import { isProject, Project } from '../models/project';
 import { isRequest, type Request } from '../models/request';
 import { isRequestGroup, RequestGroup } from '../models/request-group';
+import { isResponse } from '../models/response';
 import { WebSocketRequest } from '../models/websocket-request';
 import { isWorkspace, Workspace } from '../models/workspace';
 import * as templating from '../templating';
+import { NUNJUCKS_TEMPLATE_GLOBAL_PROPERTY_NAME, STATIC_CONTEXT_SOURCE_NAME } from '../templating';
 import * as templatingUtils from '../templating/utils';
+import { getKeys, META_KEY } from '../templating/utils';
 import { setDefaultProtocol } from '../utils/url/protocol';
 import { CONTENT_TYPE_GRAPHQL, JSON_ORDER_SEPARATOR } from './constants';
 import { database as db } from './database';
-import jsonpath from 'jsonpath';
-import { META_KEY } from '../templating/utils';
-import { NUNJUCKS_TEMPLATE_GLOBAL_PROPERTY_NAME, STATIC_CONTEXT_SOURCE_NAME } from '../templating';
-import { isResponse } from '../models/response';
 
 export const KEEP_ON_ERROR = 'keep';
 export const THROW_ON_ERROR = 'throw';
@@ -82,11 +83,12 @@ function objectPathSetter(obj: any, paths: any[], value: any) {
 }
 
 export async function executeSetter(
-  setters: RequestSetter[],
+  // TODO: change type
+  setters: any,
   renderContext: any,
-  ancestors: BaseModel[],
+  ancestors: any,
   environmentId?: string | null,
-  dataset?: RequestDataSet | null,
+  // dataset?: RequestDataSet | null,
 ) {
   const workspace = ancestors.find(isWorkspace);
   const rootEnvironment = await models.environment.getOrCreateForParentId(
@@ -95,7 +97,7 @@ export async function executeSetter(
   const subEnvironment = await models.environment.getById(environmentId || 'n/a');
   const updatedSources: { [id: string]: BaseModel } = {};
   const keys = getKeys(renderContext, NUNJUCKS_TEMPLATE_GLOBAL_PROPERTY_NAME);
-  for (const setter of setters.filter(s => s.enabled)) {
+  for (const setter of setters.filter((s: any) => s.enabled)) {
     try {
       if (setter.objectKey) {
         const keyMatched = keys.find(k => k.name === setter.objectKey);
@@ -108,7 +110,7 @@ export async function executeSetter(
           objectPathSetter(renderContext, contextPaths, value);
           const sourceId = keyMatched.meta?.id;
           const sourceType = keyMatched.meta?.type;
-          const matchSource = ancestors.find(a => a._id === sourceId && a.type === sourceType);
+          const matchSource = ancestors.find((a: any) => a._id === sourceId && a.type === sourceType);
           if (
             !matchSource &&
             sourceType === models.environment.type
@@ -126,14 +128,17 @@ export async function executeSetter(
                 updatedSources[matchEnv._id] = matchEnv;
               }
             }
-          } else if (dataset && sourceType === models.requestDataset.type) {
-            Object.values(dataset.environment).forEach(kp => {
-              if (`_.${kp.name}` === setter.objectKey) {
-                kp.value = value;
-              }
-            });
-            updatedSources[dataset._id] = dataset;
-          } else if (matchSource && matchSource.hasOwnProperty('environment')) {
+          // eslint-disable-next-line @typescript-eslint/brace-style
+          }
+          // else if (dataset && sourceType === models.requestDataset.type) {
+          //   Object.values(dataset.environment).forEach(kp => {
+          //     if (`_.${kp.name}` === setter.objectKey) {
+          //       kp.value = value;
+          //     }
+          //   });
+          //   updatedSources[dataset._id] = dataset;
+          // }
+           else if (matchSource && matchSource.hasOwnProperty('environment')) {
             const sourceEnv = (matchSource as any).environment;
             const paths = jsonpath.paths(sourceEnv, setter.objectKey.replace(/^_/, '$'))[0];
             objectPathSetter(sourceEnv, paths, value);
@@ -685,6 +690,7 @@ export async function getRenderedRequestAndContext(
       settingStoreCookies: renderedRequest.settingStoreCookies,
       settingRebuildPath: renderedRequest.settingRebuildPath,
       settingFollowRedirects: renderedRequest.settingFollowRedirects,
+      settingResponseVisualize: renderedRequest.settingResponseVisualize,
       type: renderedRequest.type,
       url: renderedRequest.url,
     },
