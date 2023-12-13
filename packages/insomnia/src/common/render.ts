@@ -1,9 +1,7 @@
 import clone from 'clone';
 import orderedJSON from 'json-order';
-import jsonpath from 'jsonpath';
 
 import * as models from '../models';
-import { BaseModel } from '../models';
 import type { CookieJar } from '../models/cookie-jar';
 import type { Environment } from '../models/environment';
 import type { GrpcRequest, GrpcRequestBody } from '../models/grpc-request';
@@ -14,9 +12,9 @@ import { isResponse } from '../models/response';
 import { WebSocketRequest } from '../models/websocket-request';
 import { isWorkspace, Workspace } from '../models/workspace';
 import * as templating from '../templating';
-import { NUNJUCKS_TEMPLATE_GLOBAL_PROPERTY_NAME, STATIC_CONTEXT_SOURCE_NAME } from '../templating';
+import { STATIC_CONTEXT_SOURCE_NAME } from '../templating';
 import * as templatingUtils from '../templating/utils';
-import { getKeys, META_KEY } from '../templating/utils';
+import { META_KEY } from '../templating/utils';
 import { setDefaultProtocol } from '../utils/url/protocol';
 import { CONTENT_TYPE_GRAPHQL, JSON_ORDER_SEPARATOR } from './constants';
 import { database as db } from './database';
@@ -69,92 +67,6 @@ export interface RenderContextAndKeys {
 export type HandleGetRenderContext = (fieldSource?: string, source?: any) => Promise<RenderContextAndKeys>;
 
 export type HandleRender = <T>(object: T, contextCacheKey?: string | null, fieldSource?: string | null, source?: any | null) => Promise<T>;
-
-function objectPathSetter(obj: any, paths: any[], value: any) {
-  if (obj && paths && paths.length) {
-    if (paths.length === 1) {
-      obj[paths[0]] = value;
-    } else if (paths[0] === '$') {
-      objectPathSetter(obj, paths.slice(1), value);
-    } else {
-      objectPathSetter(obj[paths[0]], paths.slice(1), value);
-    }
-  }
-}
-
-export async function executeSetter(
-  // TODO: change type
-  setters: any,
-  renderContext: any,
-  ancestors: any,
-  environmentId?: string | null,
-  // dataset?: RequestDataSet | null,
-) {
-  const workspace = ancestors.find(isWorkspace);
-  const rootEnvironment = await models.environment.getOrCreateForParentId(
-    workspace ? workspace._id : 'n/a',
-  );
-  const subEnvironment = await models.environment.getById(environmentId || 'n/a');
-  const updatedSources: { [id: string]: BaseModel } = {};
-  const keys = getKeys(renderContext, NUNJUCKS_TEMPLATE_GLOBAL_PROPERTY_NAME);
-  for (const setter of setters.filter((s: any) => s.enabled)) {
-    try {
-      if (setter.objectKey) {
-        const keyMatched = keys.find(k => k.name === setter.objectKey);
-        if (keyMatched) {
-          const value = await await render(
-            setter.setterValue,
-            renderContext,
-          );
-          const contextPaths = jsonpath.paths(renderContext, setter.objectKey.replace(/^_/, '$'))[0];
-          objectPathSetter(renderContext, contextPaths, value);
-          const sourceId = keyMatched.meta?.id;
-          const sourceType = keyMatched.meta?.type;
-          const matchSource = ancestors.find((a: any) => a._id === sourceId && a.type === sourceType);
-          if (
-            !matchSource &&
-            sourceType === models.environment.type
-          ) {
-            let matchEnv: Environment | null = null;
-            if (rootEnvironment && sourceId === rootEnvironment._id) {
-              matchEnv = rootEnvironment;
-            } else if (subEnvironment && sourceId === subEnvironment._id) {
-              matchEnv = subEnvironment;
-            }
-            if (matchEnv) {
-              const paths = jsonpath.paths(matchEnv.data, setter.objectKey.replace(/^_/, '$'))[0];
-              if (paths) {
-                objectPathSetter(matchEnv.data, paths, value);
-                updatedSources[matchEnv._id] = matchEnv;
-              }
-            }
-          // eslint-disable-next-line @typescript-eslint/brace-style
-          }
-          // else if (dataset && sourceType === models.requestDataset.type) {
-          //   Object.values(dataset.environment).forEach(kp => {
-          //     if (`_.${kp.name}` === setter.objectKey) {
-          //       kp.value = value;
-          //     }
-          //   });
-          //   updatedSources[dataset._id] = dataset;
-          // }
-           else if (matchSource && matchSource.hasOwnProperty('environment')) {
-            const sourceEnv = (matchSource as any).environment;
-            const paths = jsonpath.paths(sourceEnv, setter.objectKey.replace(/^_/, '$'))[0];
-            objectPathSetter(sourceEnv, paths, value);
-            updatedSources[matchSource._id] = matchSource;
-          }
-        }
-      }
-    } catch (err) {
-      console.error('Setter error', err);
-    }
-  }
-  await Promise.all(
-    Object.values(updatedSources)
-      .map(m => db.docUpdate(m, m)),
-  );
-}
 
 export async function buildRenderContext(
   {
@@ -445,8 +357,6 @@ interface BaseRenderContextOptions {
   environmentId?: string;
   purpose?: RenderPurpose;
   extraInfo?: ExtraRenderInfo;
-  // dataset?: RequestDataSet | null;
-  // requestSetters?: RequestSetter[] | null;
 }
 
 interface RenderContextOptions extends BaseRenderContextOptions, Partial<RenderRequest<Request | GrpcRequest | WebSocketRequest>> {
