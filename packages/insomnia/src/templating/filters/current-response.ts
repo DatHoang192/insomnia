@@ -49,14 +49,14 @@ const currentResponseFilter: PluginTemplateFilter = {
         },
     ],
     description: '',
-    run: async function (_ctx: PluginTemplateFilterContext, value: any, type?: string, isIncludeBody?: string) {
+    run: async function(_ctx: PluginTemplateFilterContext, value: any, type?: string, isIncludeBody?: string) {
         const topGet = type ? parseInt(type) : 0;
         let response: Response | null = null;
         if (topGet >= 0) {
-            const responses = await _ctx.util.models.response.getAvailablesRequestId(_ctx.meta.requestId, topGet + 1);
+            const responses = await _ctx.util.models.response.getAvailablesRequestId(_ctx.meta.requestId, topGet + 1, null);
             response = responses[topGet] || null;
         } else {
-            const responses = await _ctx.util.models.response.getAvailablesRequestId(_ctx.meta.requestId);
+            const responses = await _ctx.util.models.response.getAvailablesRequestId(_ctx.meta.requestId, topGet, null);
             switch (topGet) {
                 case -1: // last success
                     response = responses.find(res => res.statusCode === 200 || res.statusCode === 201) || null;
