@@ -601,3 +601,5 @@ export const REQUEST_UTIL_TABS_ORDER = [
   REQUEST_SETTING_TAB,
 ] as const;
 export type TabType = typeof REQUEST_UTIL_TABS_ORDER[number];
+
+export const EXPORT_TYPE_REQUEST_DATASET = 'request_dataset';
