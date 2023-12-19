@@ -8,11 +8,13 @@ import { metaSortKeySort } from '../../../../common/sorting';
 import { Environment } from '../../../../models/environment';
 import { REQUEST_DATASET_SETTING_COLLAPSE, RequestDataSet } from '../../../../models/request-dataset';
 import { Button } from '../../../components/themed-button';
+import { useRootLoaderData } from '../../../routes/root';
 import { WorkspaceLoaderData } from '../../../routes/workspace';
 import { Editable } from '../../base/editable';
 import { PromptButton } from '../../base/prompt-button';
 import { KeyValueEditor } from '../../key-value-editor/key-value-editor';
 import { SvgIcon } from '../../svg-icon';
+import { ChooseEnvironmentsDropdown } from './choose-environments-dropdown';
 
 interface Props {
   dataset: RequestDataSet;
@@ -56,13 +58,16 @@ const StyledKeyPairSpliterContainer = styled.div`
   > .spliter {
     position: absolute;
     top: 15px;
-    bottom: calc(var(--padding-md) + var(--padding-sm) + var(--padding-sm) + var(--line-height-xs));
+    bottom: calc(
+      var(--padding-md) + var(--padding-sm) + var(--padding-sm) +
+        var(--line-height-xs)
+    );
     border-left: 2px solid var(--hl-md);
     overflow: visible;
     cursor: ew-resize;
     z-index: 9;
     width: var(--drag-width);
-    
+
     > i {
       position: absolute;
       top: -23px;
@@ -75,81 +80,67 @@ const StyledKeyPairSpliterContainer = styled.div`
   .width-evaluater {
     position: absolute;
     height: 0;
-    width: calc(100% - var(--line-height-sm) - 1.1rem - (var(--padding-xs) * 2) - var(--padding-sm));
+    width: calc(
+      100% - var(--line-height-sm) - 1.1rem - (var(--padding-xs) * 2) -
+        var(--padding-sm)
+    );
     left: var(--line-height-sm);
   }
 `;
 
 const datasetPaneWidth = DEFAULT_PANE_WIDTH; // temporarily hardcode
 
-
-const DatasetRowEditor: FC<Props> = ({ dataset, onChanged, isBaseDataset, onToggleChanged, onDeleteDataset, onSendWithDataset, onGenerateCodeWithDataset, onPromoteToDefault, onDuplicate }) => {
+const DatasetRowEditor: FC<Props> = ({
+  dataset,
+  onChanged,
+  isBaseDataset,
+  onToggleChanged,
+  onDeleteDataset,
+  onSendWithDataset,
+  onGenerateCodeWithDataset,
+  onPromoteToDefault,
+  onDuplicate,
+}) => {
   const {
     activeEnvironment: globalActiveEnvironment,
+    activeWorkspace,
+    baseEnvironment,
+    subEnvironments,
   } = useRouteLoaderData(':workspaceId') as WorkspaceLoaderData;
+  const { settings } = useRootLoaderData();
   const [isToggled, setIsToggled] = useState(false);
-  const [toggleIconRotation, setToggleIconRotation] = useState(-90);
   const [datasetName, setDatasetName] = useState('');
   const [datasetKey, setDatasetKey] = useState(0);
   const [activeEnvironment, setActiveEnvironment] = useState<Environment>();
-  const [baseDataset, setBaseDataset] = useState<{
-    id: string;
-    metaSortKey: number;
-    name: string;
-    value: string;
-    description: string;
-    multiline: boolean;
-    type: string;
-  }[]>();
+  const [baseDataset, setBaseDataset] = useState<
+    {
+      id: string;
+      metaSortKey: number;
+      name: string;
+      value: string;
+      description: string;
+      multiline: boolean;
+      type: string;
+    }[]
+  >();
 
+  const toggleIconRotation = -90;
+  const environments = [baseEnvironment, ...subEnvironments];
   // const isPercentageType = datasetPaneWidthType === DATASET_WIDTH_TYPE_PERCENTAGE;
   // const isFixedType = datasetPaneWidthType === DATASET_WIDTH_TYPE_FIX_LEFT;
   const isPercentageType = true;
   const isFixedType = true;
 
   const spliterStyle: React.CSSProperties = {};
-    let keyWidthStyle: React.CSSProperties;
-    if (isPercentageType) {
-      spliterStyle.left = `calc((100% - var(--line-height-sm) - 3.4rem - (var(--padding-xs) * 2) - var(--padding-sm)) * ${datasetPaneWidth} + var(--line-height-sm))`;
-      keyWidthStyle = {
-        width: (datasetPaneWidth / (1 - datasetPaneWidth) * 100) + '%',
-      };
-    } else {
-      spliterStyle.left = `calc(${datasetPaneWidth}px + var(--line-height-sm))`;
-      keyWidthStyle = {
-        flexBasis: datasetPaneWidth + 'px',
-        flexGrow: 0,
-        flexShrink: 0,
-      };
-    }
+  if (isPercentageType) {
+    spliterStyle.left = `calc((100% - var(--line-height-sm) - 3.4rem - (var(--padding-xs) * 2) - var(--padding-sm)) * ${datasetPaneWidth} + var(--line-height-sm))`;
+  } else {
+    spliterStyle.left = `calc(${datasetPaneWidth}px + var(--line-height-sm))`;
+  }
 
   useEffect(() => {
-    const datasetList = Object.keys(dataset.environment).map(k => ({
-      _id: k,
-      id: k,
-      name: dataset.environment[k].name,
-      metaSortKey: dataset.environment[k].metaSortKey,
-      value: dataset.environment[k].value,
-      description: dataset.environment[k].description,
-      multiline: dataset.environment[k].multiline,
-      type: 'text',
-    })).sort(metaSortKeySort);
-    let isToggled = false;
-    if (dataset.settings) {
-      isToggled = dataset.settings[REQUEST_DATASET_SETTING_COLLAPSE] || false;
-    }
-    setIsToggled(isToggled);
-    setToggleIconRotation(-90);
-    setBaseDataset(datasetList);
-    setDatasetName(dataset.name);
-    setDatasetKey(0);
-    setActiveEnvironment(activeEnvironment);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (!isBaseDataset && (dataset as any).new) {
-      const datasetList = Object.keys(dataset.environment).map(k => ({
+    const datasetList = Object.keys(dataset.environment)
+      .map(k => ({
         _id: k,
         id: k,
         name: dataset.environment[k].name,
@@ -158,15 +149,38 @@ const DatasetRowEditor: FC<Props> = ({ dataset, onChanged, isBaseDataset, onTogg
         description: dataset.environment[k].description,
         multiline: dataset.environment[k].multiline,
         type: 'text',
-      })).sort(metaSortKeySort);
-      setBaseDataset(datasetList);
-      setDatasetName(dataset.name);
-      setDatasetKey(datasetKey + 1);
+      }))
+      .sort(metaSortKeySort);
+    let isToggled = false;
+    if (dataset.settings) {
+      isToggled = dataset.settings[REQUEST_DATASET_SETTING_COLLAPSE] || false;
+    }
+    setIsToggled(isToggled);
+    setBaseDataset(datasetList);
+    setDatasetName(dataset.name);
+    setActiveEnvironment(activeEnvironment);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!isBaseDataset && (dataset as any).new) {
+      const datasetList = Object.keys(dataset.environment)
+        .map(k => ({
+          _id: k,
+          id: k,
+          name: dataset.environment[k].name,
+          metaSortKey: dataset.environment[k].metaSortKey,
+          value: dataset.environment[k].value,
+          description: dataset.environment[k].description,
+          multiline: dataset.environment[k].multiline,
+          type: 'text',
+        }))
+        .sort(metaSortKeySort);
       setBaseDataset(datasetList);
       setDatasetName(dataset.name);
       setDatasetKey(prevDatasetKey => prevDatasetKey + 1);
     }
-  }, [dataset, datasetKey, isBaseDataset]);
+  }, [dataset, isBaseDataset]);
 
   const handleKeyValueUpdate = (datasetList: any[]) => {
     dataset.environment = datasetList.reduce((obj, ds, i) => {
@@ -185,10 +199,8 @@ const DatasetRowEditor: FC<Props> = ({ dataset, onChanged, isBaseDataset, onTogg
   };
 
   const toggle = () => {
-    onToggleChanged && onToggleChanged(
-      dataset, !isToggled
-    );
-    setIsToggled(isToggled);
+    onToggleChanged && onToggleChanged(dataset, !isToggled);
+    setIsToggled(!isToggled);
   };
 
   const handleOnDeleteDataset = () => {
@@ -234,11 +246,11 @@ const DatasetRowEditor: FC<Props> = ({ dataset, onChanged, isBaseDataset, onTogg
     setDatasetName(newName);
   };
 
-  // const handleChangeEnvironment = (environmentId: string) => {
-  //   dataset.applyEnv = environmentId;
-  //   onChanged(dataset);
-  //   setActiveEnvironment(globalActiveEnvironment);
-  // };
+  const handleChangeEnvironment = (environmentId: string) => {
+    dataset.applyEnv = environmentId;
+    onChanged(dataset);
+    setActiveEnvironment(globalActiveEnvironment);
+  };
 
   const handleOnSetDefaultDataset = () => {
     if (onPromoteToDefault) {
@@ -253,9 +265,9 @@ const DatasetRowEditor: FC<Props> = ({ dataset, onChanged, isBaseDataset, onTogg
   };
 
   if (isBaseDataset) {
-      return (
-        <StyledKeyPairSpliterContainer>
-          {/* <div className="width-evaluater" ref={handleSetRequestDatasetPaneRef} />
+    return (
+      <StyledKeyPairSpliterContainer>
+        {/* <div className="width-evaluater" ref={handleSetRequestDatasetPaneRef} />
           <div
             className="spliter"
             onMouseDown={handleStartDragDatasetPaneHorizontal}
@@ -268,8 +280,8 @@ const DatasetRowEditor: FC<Props> = ({ dataset, onChanged, isBaseDataset, onTogg
               onClick={handleToggleDatasetResizeType}
             />
           </div> */}
-          {baseDataset && <KeyValueEditor
-            // keyWidth={keyWidthStyle}
+        {baseDataset && (
+          <KeyValueEditor
             namePlaceholder="data key"
             valuePlaceholder="data value"
             descriptionPlaceholder="description"
@@ -277,10 +289,11 @@ const DatasetRowEditor: FC<Props> = ({ dataset, onChanged, isBaseDataset, onTogg
             handleGetAutocompleteNameConstants={getCommonHeaderNames}
             handleGetAutocompleteValueConstants={getCommonHeaderValues}
             onChange={handleKeyValueUpdate}
-          />}
-        </StyledKeyPairSpliterContainer>
-      );
-    }
+          />
+        )}
+      </StyledKeyPairSpliterContainer>
+    );
+  }
 
   return (
     <StyledResultListItem>
@@ -288,7 +301,9 @@ const DatasetRowEditor: FC<Props> = ({ dataset, onChanged, isBaseDataset, onTogg
         <Button
           onClick={toggle}
           variant="text"
-          style={isToggled ? {} : { transform: `rotate(${toggleIconRotation}deg)` }}
+          style={
+            isToggled ? {} : { transform: `rotate(${toggleIconRotation}deg)` }
+          }
         >
           <SvgIcon icon="chevron-down" />
         </Button>
@@ -302,14 +317,15 @@ const DatasetRowEditor: FC<Props> = ({ dataset, onChanged, isBaseDataset, onTogg
             value={datasetName}
           />
         </h2>
-        {/* {activeWorkspace && (<ChooseEnvironmentsDropdown
-          handleChangeEnvironment={this._handleChangeEnvironment}
-          activeEnvironment={activeEnvironment}
-          environments={environments}
-          workspace={activeWorkspace}
-          environmentHighlightColorStyle={settings.environmentHighlightColorStyle}
-          hotKeyRegistry={settings.hotKeyRegistry}
-        />)} */}
+        {activeWorkspace && (
+          <ChooseEnvironmentsDropdown
+            handleChangeEnvironment={handleChangeEnvironment}
+            activeEnvironment={activeEnvironment}
+            environments={environments}
+            workspace={activeWorkspace}
+            hotKeyRegistry={settings.hotKeyRegistry}
+          />
+        )}
         <PromptButton
           key={Math.random()}
           tabIndex={-1}
@@ -320,16 +336,10 @@ const DatasetRowEditor: FC<Props> = ({ dataset, onChanged, isBaseDataset, onTogg
           <i className="fa fa-certificate" />
         </PromptButton>
 
-        <Button
-          variant="text"
-          onClick={handleOnDuplicate}
-        >
+        <Button variant="text" onClick={handleOnDuplicate}>
           <i className="fa fa-files-o" />
         </Button>
-        <Button
-          variant="text"
-          onClick={handleOnGenerateCode}
-        >
+        <Button variant="text" onClick={handleOnGenerateCode}>
           <i className="fa fa-code" />
         </Button>
         <PromptButton
@@ -342,27 +352,29 @@ const DatasetRowEditor: FC<Props> = ({ dataset, onChanged, isBaseDataset, onTogg
           <i className="fa fa-trash-o" />
         </PromptButton>
 
-        <Button
-          variant="text"
-          onClick={handleOnSendWithDataset}
-        >
+        <Button variant="text" onClick={handleOnSendWithDataset}>
           <SvgIcon icon="play" />
         </Button>
       </div>
-      {isToggled && <div>
-        {baseDataset?.length && <KeyValueEditor
-          key={datasetKey}
-          namePlaceholder="data key"
-          valuePlaceholder="data value"
-          descriptionPlaceholder="description"
-          pairs={baseDataset}
-          allowMultiline
-          handleGetAutocompleteNameConstants={getCommonHeaderNames}
-          handleGetAutocompleteValueConstants={getCommonHeaderValues}
-          onChange={handleKeyValueUpdate}
-        />}
-        {!baseDataset?.length && <span>Update base dataset first</span>}
-      </div>}
+
+      {isToggled && (
+        <div>
+          {baseDataset?.length && (
+            <KeyValueEditor
+              key={datasetKey}
+              namePlaceholder="data key"
+              valuePlaceholder="data value"
+              descriptionPlaceholder="description"
+              pairs={baseDataset}
+              allowMultiline
+              handleGetAutocompleteNameConstants={getCommonHeaderNames}
+              handleGetAutocompleteValueConstants={getCommonHeaderValues}
+              onChange={handleKeyValueUpdate}
+            />
+          )}
+          {!baseDataset?.length && <span>Update base dataset first</span>}
+        </div>
+      )}
     </StyledResultListItem>
   );
 };

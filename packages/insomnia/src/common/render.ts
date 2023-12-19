@@ -634,6 +634,7 @@ export async function getRenderedRequestAndContext(
       settingResponseVisualize: renderedRequest.settingResponseVisualize,
       type: renderedRequest.type,
       url: renderedRequest.url,
+      settingDatasetFilter: renderedRequest.settingDatasetFilter,
     },
   };
 }
