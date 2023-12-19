@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import { useRouteLoaderData } from 'react-router-dom';
 
 import * as models from '../../../../models';
@@ -11,7 +11,11 @@ import { showModal } from '../../modals';
 import { GenerateCodeModal } from '../../modals/generate-code-modal';
 import DatasetRowEditor from './dataset-row-editor';
 
-export const RequestDatasetEditor = () => {
+interface Props {
+  setLoading: (l: boolean) => void;
+}
+
+export const RequestDatasetEditor: FC<Props> = ({ setLoading }) => {
   const [toggleIconRotation, setToggleIconRotation] = useState(-90);
   const [baseDataset, setBaseDataset] = useState<RequestDataSet>();
   const [otherDatasets, setOtherDatasets] = useState<RequestDataSet[]>([]);
@@ -201,6 +205,7 @@ export const RequestDatasetEditor = () => {
           dataset={baseDataset}
           isBaseDataset={true}
           onChanged={onBaseDatasetChanged}
+          setLoading={setLoading}
         />}
         <hr />
         <button className="btn btn--clicky faint" onClick={addNewDataSet}>
@@ -217,6 +222,7 @@ export const RequestDatasetEditor = () => {
               onChanged={onDatasetChanged}
               onDeleteDataset={onDeleteDataset}
               onSendWithDataset={onSendWithDataset}
+              setLoading={setLoading}
             />
           ))}
         {/* </ListGroup> */}
