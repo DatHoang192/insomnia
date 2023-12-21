@@ -103,7 +103,8 @@ export const RequestUrlBar = forwardRef<RequestUrlBarHandle, Props>(({
     } else {
       setLoading(false);
     }
-  }, [fetcher.state, setLoading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetcher.state]);
   const { organizationId, projectId, workspaceId, requestId } = useParams() as { organizationId: string; projectId: string; workspaceId: string; requestId: string };
   const connect = useCallback((connectParams: ConnectActionParams) => {
     fetcher.submit(JSON.stringify(connectParams),

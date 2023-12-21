@@ -136,13 +136,12 @@ const DatasetRowEditor: FC<Props> = ({
   >();
   const fetcher = useFetcher();
 
-
   const toggleIconRotation = -90;
   const environments = [baseEnvironment, ...subEnvironments];
   // const isPercentageType = datasetPaneWidthType === DATASET_WIDTH_TYPE_PERCENTAGE;
   // const isFixedType = datasetPaneWidthType === DATASET_WIDTH_TYPE_FIX_LEFT;
   const isPercentageType = true;
-  const isFixedType = true;
+  // const isFixedType = true;
 
   const spliterStyle: React.CSSProperties = {};
   if (isPercentageType) {
@@ -158,7 +157,8 @@ const DatasetRowEditor: FC<Props> = ({
     } else {
       setLoading(false);
     }
-  }, [fetcher.state, setLoading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetcher.state]);
   const { organizationId, projectId, workspaceId, requestId } = useParams() as { organizationId: string; projectId: string; workspaceId: string; requestId: string };
   const connect = useCallback((connectParams: ConnectActionParams) => {
     fetcher.submit(JSON.stringify(connectParams),
