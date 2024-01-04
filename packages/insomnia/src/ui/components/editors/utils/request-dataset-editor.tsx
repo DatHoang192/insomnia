@@ -266,6 +266,7 @@ export const RequestDatasetEditor: FC<Props> = ({ setLoading }) => {
               onSendWithDataset={onSendWithDataset}
               setLoading={setLoading}
               onDuplicate={handleDuplicate}
+              onToggleChanged={handleToggleChanged}
             />
           ))}
       </div>

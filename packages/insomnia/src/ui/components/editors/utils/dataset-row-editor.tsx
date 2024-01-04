@@ -116,7 +116,6 @@ const DatasetRowEditor: FC<Props> = ({
     'request/:requestId'
   ) as RequestLoaderData;
   const { settings } = useRootLoaderData();
-  const [isToggled, setIsToggled] = useState(false);
   const [datasetName, setDatasetName] = useState('');
   const [datasetKey, setDatasetKey] = useState(0);
   const [baseDataset, setBaseDataset] = useState<
@@ -134,6 +133,8 @@ const DatasetRowEditor: FC<Props> = ({
   const [activeEnvironment, setActiveEnvironment] = useState<
     Environment | undefined
   >(environments.find(e => e._id === dataset.applyEnv)); // define active environment for each dataset, not active environment in workspace
+  const isOpenDataset: boolean =
+    dataset.settings?.[REQUEST_DATASET_SETTING_COLLAPSE] || false;
   const fetcher = useFetcher();
 
   const toggleIconRotation = -90;
@@ -284,11 +285,6 @@ const DatasetRowEditor: FC<Props> = ({
         type: 'text',
       }))
       .sort(metaSortKeySort);
-    let isToggled = false;
-    if (dataset.settings) {
-      isToggled = dataset.settings[REQUEST_DATASET_SETTING_COLLAPSE] || false;
-    }
-    setIsToggled(isToggled);
     setBaseDataset(datasetList);
     setDatasetName(dataset.name);
     setActiveEnvironment(activeEnvironment);
@@ -332,8 +328,7 @@ const DatasetRowEditor: FC<Props> = ({
   };
 
   const toggle = () => {
-    onToggleChanged && onToggleChanged(dataset, !isToggled);
-    setIsToggled(!isToggled);
+    onToggleChanged && onToggleChanged(dataset, !isOpenDataset);
   };
 
   const handleOnDeleteDataset = () => {
@@ -433,7 +428,9 @@ const DatasetRowEditor: FC<Props> = ({
           onClick={toggle}
           variant="text"
           style={
-            isToggled ? {} : { transform: `rotate(${toggleIconRotation}deg)` }
+            isOpenDataset
+              ? {}
+              : { transform: `rotate(${toggleIconRotation}deg)` }
           }
         >
           <SvgIcon icon="chevron-down" />
@@ -487,7 +484,7 @@ const DatasetRowEditor: FC<Props> = ({
         </Button>
       </div>
 
-      {isToggled && (
+      {isOpenDataset && (
         <div>
           {baseDataset?.length && (
             <KeyValueEditor

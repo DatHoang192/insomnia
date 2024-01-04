@@ -41,6 +41,7 @@ export function init(): BaseRequestDataset {
     default: false,
     selected: false,
     applyEnv: null,
+    settings: {},
   };
 }
 
