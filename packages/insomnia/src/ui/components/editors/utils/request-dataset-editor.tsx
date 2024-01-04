@@ -265,6 +265,7 @@ export const RequestDatasetEditor: FC<Props> = ({ setLoading }) => {
               onDeleteDataset={onDeleteDataset}
               onSendWithDataset={onSendWithDataset}
               setLoading={setLoading}
+              onDuplicate={handleDuplicate}
             />
           ))}
       </div>
