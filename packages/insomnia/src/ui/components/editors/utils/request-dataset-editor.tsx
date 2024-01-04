@@ -2,9 +2,11 @@ import React, { FC, useEffect, useState } from 'react';
 import { useRouteLoaderData } from 'react-router-dom';
 
 import * as models from '../../../../models';
-import { Environment } from '../../../../models/environment';
 import { Request } from '../../../../models/request';
-import { REQUEST_DATASET_SETTING_COLLAPSE, RequestDataSet } from '../../../../models/request-dataset';
+import {
+  REQUEST_DATASET_SETTING_COLLAPSE,
+  RequestDataSet,
+} from '../../../../models/request-dataset';
 import { RequestLoaderData } from '../../../routes/request';
 import { WorkspaceLoaderData } from '../../../routes/workspace';
 import { showModal } from '../../modals';
@@ -16,42 +18,35 @@ interface Props {
 }
 
 export const RequestDatasetEditor: FC<Props> = ({ setLoading }) => {
-  const [toggleIconRotation, setToggleIconRotation] = useState(-90);
   const [baseDataset, setBaseDataset] = useState<RequestDataSet>();
   const [otherDatasets, setOtherDatasets] = useState<RequestDataSet[]>([]);
-  const [subEnvironments, setSubEnvironments] = useState<Environment[]>([]);
-  const [toggleEnvironmentFilter, setToggleEnvironmentFilter] = useState<boolean>(false);
+  const [toggleEnvironmentFilter, setToggleEnvironmentFilter] =
+    useState<boolean>(false);
   const [renderCount, setRenderCount] = useState<number>(0);
   const { activeRequest } = useRouteLoaderData(
     'request/:requestId'
   ) as RequestLoaderData;
-  const {
-    activeWorkspace,
-    activeEnvironment,
-  } = useRouteLoaderData(':workspaceId') as WorkspaceLoaderData;
+  const { activeEnvironment } = useRouteLoaderData(
+    ':workspaceId'
+  ) as WorkspaceLoaderData;
 
   const addNewDataSet = async () => {
     if (baseDataset) {
       const dataset = await models.requestDataset.create({
         parentId: baseDataset.parentId,
       });
-      onChange(
-        baseDataset,
-        [
-          ...otherDatasets,
-          dataset,
-        ],
-      );
+      onChange(baseDataset, [...otherDatasets, dataset]);
     }
   };
 
   const load = async () => {
-    const rootEnvironment = await models.environment.getOrCreateForParentId(activeWorkspace._id);
-    const subEnvironments = await models.environment.findByParentId(rootEnvironment._id);
-    const baseDataset = await models.requestDataset.getOrCreateForRequest(activeRequest);
-    let datasets = await models.requestDataset.findByParentId(activeRequest._id);
+    const baseDataset = await models.requestDataset.getOrCreateForRequest(
+      activeRequest
+    );
+    let datasets = await models.requestDataset.findByParentId(
+      activeRequest._id
+    );
     datasets = datasets.filter(ds => ds._id !== baseDataset._id);
-    setSubEnvironments(subEnvironments);
     setBaseDataset(baseDataset);
     setOtherDatasets(datasets);
   };
@@ -64,16 +59,23 @@ export const RequestDatasetEditor: FC<Props> = ({ setLoading }) => {
       });
       const newDatasetResults = otherDatasets.map(ds => {
         const dsEnvironment = bdsKeys.reduce(
-          (obj, key) => Object.assign(obj, {
-            [key]: Object.assign({
-              value: '',
-              description: '',
-            }, ds.environment[key], {
-              id: key,
-              name: dataset.environment[key].name,
-              metaSortKey: dataset.environment[key].metaSortKey,
+          (obj, key) =>
+            Object.assign(obj, {
+              [key]: Object.assign(
+                {
+                  value: '',
+                  description: '',
+                },
+                ds.environment[key],
+                {
+                  id: key,
+                  name: dataset.environment[key].name,
+                  metaSortKey: dataset.environment[key].metaSortKey,
+                }
+              ),
             }),
-          }), {});
+          {}
+        );
         (ds as any).new = true;
         return models.requestDataset.update(ds, {
           environment: dsEnvironment,
@@ -85,7 +87,11 @@ export const RequestDatasetEditor: FC<Props> = ({ setLoading }) => {
     }
   };
 
-  const onChange = (baseDataset: RequestDataSet, otherDatasets: RequestDataSet[], nextRenderCount?: number) => {
+  const onChange = (
+    baseDataset: RequestDataSet,
+    otherDatasets: RequestDataSet[],
+    nextRenderCount?: number
+  ) => {
     if (nextRenderCount !== undefined) {
       setRenderCount(nextRenderCount);
     }
@@ -102,13 +108,17 @@ export const RequestDatasetEditor: FC<Props> = ({ setLoading }) => {
         description: dataset.description,
         applyEnv: dataset.applyEnv,
       });
-      const newDatasets = otherDatasets.map(ds => ds._id === updatingDataset._id ? updatingDataset : ds);
-     onChange(baseDataset, newDatasets);
+      const newDatasets = otherDatasets.map(ds =>
+        ds._id === updatingDataset._id ? updatingDataset : ds
+      );
+      onChange(baseDataset, newDatasets);
     }
   };
 
   const onDeleteDataset = async (dataset: RequestDataSet) => {
-    const deletingDataset = otherDatasets.filter(ds => ds._id === dataset._id)[0];
+    const deletingDataset = otherDatasets.filter(
+      ds => ds._id === dataset._id
+    )[0];
     if (deletingDataset && baseDataset) {
       await models.requestDataset.remove(deletingDataset);
       const newDatasets = otherDatasets.filter(ds => ds._id !== dataset._id);
@@ -133,38 +143,41 @@ export const RequestDatasetEditor: FC<Props> = ({ setLoading }) => {
 
   const handleDuplicate = async (dataset: RequestDataSet) => {
     if (baseDataset) {
-      const duplicatingDataset = otherDatasets.filter(ds => ds._id === dataset._id)[0];
+      const duplicatingDataset = otherDatasets.filter(
+        ds => ds._id === dataset._id
+      )[0];
       const duplicatedDataset = await models.requestDataset.duplicate(
         duplicatingDataset,
         {
           parentId: baseDataset.parentId,
         }
       );
-      onChange(
-        baseDataset,
-        [
-          ...otherDatasets,
-          duplicatedDataset,
-        ],
-      );
+      onChange(baseDataset, [...otherDatasets, duplicatedDataset]);
     }
   };
 
   const handlePromoteToDefault = async (dataset: RequestDataSet) => {
-    let promotingDataset = otherDatasets.filter(ds => ds._id === dataset._id)[0];
+    let promotingDataset = otherDatasets.filter(
+      ds => ds._id === dataset._id
+    )[0];
     if (promotingDataset && baseDataset) {
       const promotingEnvironment = { ...promotingDataset.environment };
       const baseEnvironment = { ...baseDataset.environment };
-      const baseDatasetFromModels = await models.requestDataset.update(baseDataset, {
-        environment: promotingEnvironment,
-      });
+      const baseDatasetFromModels = await models.requestDataset.update(
+        baseDataset,
+        {
+          environment: promotingEnvironment,
+        }
+      );
       setBaseDataset(baseDatasetFromModels);
       promotingDataset = await models.requestDataset.update(promotingDataset, {
         environment: baseEnvironment,
       });
-      setOtherDatasets(otherDatasets.map(
-        ds => ds._id === promotingDataset._id ? { ...promotingDataset } : ds
-      ));
+      setOtherDatasets(
+        otherDatasets.map(ds =>
+          ds._id === promotingDataset._id ? { ...promotingDataset } : ds
+        )
+      );
       if (baseDataset) {
         onChange(baseDataset, otherDatasets, renderCount + 1);
       }
@@ -178,7 +191,10 @@ export const RequestDatasetEditor: FC<Props> = ({ setLoading }) => {
     setToggleEnvironmentFilter(!toggleEnvironmentFilter);
   };
 
-  const handleToggleChanged = async (dataset: RequestDataSet, toggle: boolean) => {
+  const handleToggleChanged = async (
+    dataset: RequestDataSet,
+    toggle: boolean
+  ) => {
     let updatingDataset = otherDatasets.filter(ds => ds._id === dataset._id)[0];
     if (baseDataset && updatingDataset) {
       updatingDataset = await models.requestDataset.update(updatingDataset, {
@@ -187,32 +203,43 @@ export const RequestDatasetEditor: FC<Props> = ({ setLoading }) => {
           [REQUEST_DATASET_SETTING_COLLAPSE]: toggle,
         },
       });
-      const newDatasets = otherDatasets.map(ds => ds._id === updatingDataset._id ? updatingDataset : ds);
+      const newDatasets = otherDatasets.map(ds =>
+        ds._id === updatingDataset._id ? updatingDataset : ds
+      );
       onChange(baseDataset, newDatasets);
     }
   };
 
   useEffect(() => {
     load();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <div className="pad">
       <div className="scrollable">
         <h4>Base dataset</h4>
-        {baseDataset && <DatasetRowEditor
-          dataset={baseDataset}
-          isBaseDataset={true}
-          onChanged={onBaseDatasetChanged}
-          setLoading={setLoading}
-        />}
+        {baseDataset && (
+          <DatasetRowEditor
+            dataset={baseDataset}
+            isBaseDataset={true}
+            onChanged={onBaseDatasetChanged}
+            setLoading={setLoading}
+          />
+        )}
         <hr />
         <button className="btn btn--clicky faint" onClick={addNewDataSet}>
           Add new dataset
         </button>
         {/* <ListGroup> */}
-          {otherDatasets.map((dataset, i) => (
+        {otherDatasets
+          .filter(
+            ds =>
+              !toggleEnvironmentFilter ||
+              !ds.applyEnv ||
+              ds.applyEnv === activeEnvironment?._id
+          )
+          .map((dataset, i) => (
             <DatasetRowEditor
               // eslint-disable-next-line react/no-array-index-key
               key={i}

@@ -38,6 +38,7 @@ interface Props {
 
 const StyledResultListItem = styled.li`
   padding: 0 var(--padding-sm);
+  list-style-type: none;
 
   > div:first-of-type {
     display: grid;
@@ -159,84 +160,118 @@ const DatasetRowEditor: FC<Props> = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetcher.state]);
-  const { organizationId, projectId, workspaceId, requestId } = useParams() as { organizationId: string; projectId: string; workspaceId: string; requestId: string };
-  const connect = useCallback((connectParams: ConnectActionParams) => {
-    fetcher.submit(JSON.stringify(connectParams),
-      {
+  const { organizationId, projectId, workspaceId, requestId } = useParams() as {
+    organizationId: string;
+    projectId: string;
+    workspaceId: string;
+    requestId: string;
+  };
+  const connect = useCallback(
+    (connectParams: ConnectActionParams) => {
+      fetcher.submit(JSON.stringify(connectParams), {
         action: `/organization/${organizationId}/project/${projectId}/workspace/${workspaceId}/debug/request/${requestId}/connect`,
         method: 'post',
         encType: 'application/json',
       });
-  }, [fetcher, organizationId, projectId, requestId, workspaceId]);
-  const send = useCallback((sendParams: SendActionParams) => {
-    fetcher.submit(JSON.stringify(sendParams),
-      {
+    },
+    [fetcher, organizationId, projectId, requestId, workspaceId]
+  );
+  const send = useCallback(
+    (sendParams: SendActionParams) => {
+      fetcher.submit(JSON.stringify(sendParams), {
         action: `/organization/${organizationId}/project/${projectId}/workspace/${workspaceId}/debug/request/${requestId}/send`,
         method: 'post',
         encType: 'application/json',
       });
-  }, [fetcher, organizationId, projectId, requestId, workspaceId]);
+    },
+    [fetcher, organizationId, projectId, requestId, workspaceId]
+  );
 
-  const sendOrConnect = useCallback(async (shouldPromptForPathAfterResponse?: boolean, dataset?: RequestDataSet) => {
-    models.stats.incrementExecutedRequests();
-    window.main.trackSegmentEvent({
-      event: SegmentEvent.requestExecute,
-      properties: {
-        preferredHttpVersion: settings.preferredHttpVersion,
-        authenticationType: activeRequest.authentication?.type,
-        mimeType: activeRequest.body.mimeType,
-      },
-    });
-
-    if (!dataset) {
-      dataset = await models.requestDataset.getOrCreateForRequest(activeRequest);
-    }
-
-    if (isEventStreamRequest(activeRequest)) {
-      const startListening = async () => {
-        const environmentId = activeEnvironment?._id || '';
-        const workspaceId = activeWorkspace._id;
-        // Render any nunjucks tags in the url/headers/authentication settings/cookies
-        const workspaceCookieJar = await models.cookieJar.getOrCreateForParentId(workspaceId);
-        const rendered = await tryToInterpolateRequestOrShowRenderErrorModal({
-          request: activeRequest,
-          environmentId,
-          payload: {
-            url: activeRequest.url,
-            headers: activeRequest.headers,
-            authentication: activeRequest.authentication,
-            parameters: activeRequest.parameters.filter(p => !p.disabled),
-            workspaceCookieJar,
-          },
-        });
-        rendered && connect({
-          url: joinUrlAndQueryString(rendered.url, buildQueryStringFromParams(rendered.parameters)),
-          headers: rendered.headers,
-          authentication: rendered.authentication,
-          cookieJar: rendered.workspaceCookieJar,
-          suppressUserAgent: rendered.suppressUserAgent,
-        });
-      };
-      startListening();
-      return;
-    }
-
-    try {
-      send({ requestId, shouldPromptForPathAfterResponse, datasetId: dataset._id });
-    } catch (err) {
-      showAlert({
-        title: 'Unexpected Request Failure',
-        message: (
-          <div>
-            <p>The request failed due to an unhandled error:</p>
-            <code className="wide selectable">
-              <pre>{err.message}</pre>
-            </code>
-          </div>
-        ),
+  const sendOrConnect = useCallback(
+    async (
+      shouldPromptForPathAfterResponse?: boolean,
+      dataset?: RequestDataSet
+    ) => {
+      models.stats.incrementExecutedRequests();
+      window.main.trackSegmentEvent({
+        event: SegmentEvent.requestExecute,
+        properties: {
+          preferredHttpVersion: settings.preferredHttpVersion,
+          authenticationType: activeRequest.authentication?.type,
+          mimeType: activeRequest.body.mimeType,
+        },
       });
-    }
-  }, [activeEnvironment?._id, activeRequest, activeWorkspace._id, connect, requestId, send, settings.preferredHttpVersion]);
+
+      if (!dataset) {
+        dataset = await models.requestDataset.getOrCreateForRequest(
+          activeRequest
+        );
+      }
+
+      if (isEventStreamRequest(activeRequest)) {
+        const startListening = async () => {
+          const environmentId = activeEnvironment?._id || '';
+          const workspaceId = activeWorkspace._id;
+          // Render any nunjucks tags in the url/headers/authentication settings/cookies
+          const workspaceCookieJar =
+            await models.cookieJar.getOrCreateForParentId(workspaceId);
+          const rendered = await tryToInterpolateRequestOrShowRenderErrorModal({
+            request: activeRequest,
+            environmentId,
+            payload: {
+              url: activeRequest.url,
+              headers: activeRequest.headers,
+              authentication: activeRequest.authentication,
+              parameters: activeRequest.parameters.filter(p => !p.disabled),
+              workspaceCookieJar,
+            },
+          });
+          rendered &&
+            connect({
+              url: joinUrlAndQueryString(
+                rendered.url,
+                buildQueryStringFromParams(rendered.parameters)
+              ),
+              headers: rendered.headers,
+              authentication: rendered.authentication,
+              cookieJar: rendered.workspaceCookieJar,
+              suppressUserAgent: rendered.suppressUserAgent,
+            });
+        };
+        startListening();
+        return;
+      }
+
+      try {
+        send({
+          requestId,
+          shouldPromptForPathAfterResponse,
+          datasetId: dataset._id,
+        });
+      } catch (err) {
+        showAlert({
+          title: 'Unexpected Request Failure',
+          message: (
+            <div>
+              <p>The request failed due to an unhandled error:</p>
+              <code className="wide selectable">
+                <pre>{err.message}</pre>
+              </code>
+            </div>
+          ),
+        });
+      }
+    },
+    [
+      activeEnvironment?._id,
+      activeRequest,
+      activeWorkspace._id,
+      connect,
+      requestId,
+      send,
+      settings.preferredHttpVersion,
+    ]
+  );
 
   useEffect(() => {
     const datasetList = Object.keys(dataset.environment)
@@ -328,7 +363,7 @@ const DatasetRowEditor: FC<Props> = ({
 
   const handleOnSendWithDataset = () => {
     const thisDataset = prepareDataset();
-      sendOrConnect(undefined, thisDataset);
+    sendOrConnect(undefined, thisDataset);
   };
 
   const handleOnGenerateCode = () => {
@@ -347,7 +382,7 @@ const DatasetRowEditor: FC<Props> = ({
   const handleChangeEnvironment = (environmentId: string) => {
     dataset.applyEnv = environmentId;
     onChanged(dataset);
-    setActiveEnvironment(globalActiveEnvironment);
+    setActiveEnvironment(environments.find(e => e._id === environmentId));
   };
 
   const handleOnSetDefaultDataset = () => {
@@ -421,7 +456,6 @@ const DatasetRowEditor: FC<Props> = ({
             activeEnvironment={activeEnvironment}
             environments={environments}
             workspace={activeWorkspace}
-            hotKeyRegistry={settings.hotKeyRegistry}
           />
         )}
         <PromptButton
