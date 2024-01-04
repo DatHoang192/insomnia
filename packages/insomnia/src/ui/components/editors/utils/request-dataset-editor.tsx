@@ -1,5 +1,6 @@
 import React, { FC, useEffect, useState } from 'react';
 import { useRouteLoaderData } from 'react-router-dom';
+import styled from 'styled-components';
 
 import * as models from '../../../../models';
 import { Request } from '../../../../models/request';
@@ -7,11 +8,22 @@ import {
   REQUEST_DATASET_SETTING_COLLAPSE,
   RequestDataSet,
 } from '../../../../models/request-dataset';
+import { useRequestPatcher } from '../../../hooks/use-request';
 import { RequestLoaderData } from '../../../routes/request';
 import { WorkspaceLoaderData } from '../../../routes/workspace';
 import { showModal } from '../../modals';
 import { GenerateCodeModal } from '../../modals/generate-code-modal';
+import { Checkbox } from './checkbox';
 import DatasetRowEditor from './dataset-row-editor';
+
+const StyledDatasetActionsContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  > .jump-right {
+    margin-left: auto;
+  }
+`;
 
 interface Props {
   setLoading: (l: boolean) => void;
@@ -20,8 +32,6 @@ interface Props {
 export const RequestDatasetEditor: FC<Props> = ({ setLoading }) => {
   const [baseDataset, setBaseDataset] = useState<RequestDataSet>();
   const [otherDatasets, setOtherDatasets] = useState<RequestDataSet[]>([]);
-  const [toggleEnvironmentFilter, setToggleEnvironmentFilter] =
-    useState<boolean>(false);
   const [renderCount, setRenderCount] = useState<number>(0);
   const { activeRequest } = useRouteLoaderData(
     'request/:requestId'
@@ -29,6 +39,7 @@ export const RequestDatasetEditor: FC<Props> = ({ setLoading }) => {
   const { activeEnvironment } = useRouteLoaderData(
     ':workspaceId'
   ) as WorkspaceLoaderData;
+  const patchRequest = useRequestPatcher();
 
   const addNewDataSet = async () => {
     if (baseDataset) {
@@ -185,10 +196,9 @@ export const RequestDatasetEditor: FC<Props> = ({ setLoading }) => {
   };
 
   const updateToggleEnvironmentFilter = () => {
-    models.request.update(activeRequest, {
-      settingDatasetFilter: !toggleEnvironmentFilter,
+    patchRequest(activeRequest._id, {
+      settingDatasetFilter: !activeRequest.settingDatasetFilter,
     });
-    setToggleEnvironmentFilter(!toggleEnvironmentFilter);
   };
 
   const handleToggleChanged = async (
@@ -228,21 +238,26 @@ export const RequestDatasetEditor: FC<Props> = ({ setLoading }) => {
           />
         )}
         <hr />
-        <button className="btn btn--clicky faint" onClick={addNewDataSet}>
-          Add new dataset
-        </button>
-        {/* <ListGroup> */}
+        <StyledDatasetActionsContainer className="pod">
+          <button className="btn btn--clicky faint" onClick={addNewDataSet}>
+            Add new dataset
+          </button>
+          <Checkbox
+            checked={activeRequest.settingDatasetFilter}
+            label={'Filter by env'}
+            onChange={updateToggleEnvironmentFilter}
+          />
+        </StyledDatasetActionsContainer>
         {otherDatasets
           .filter(
             ds =>
-              !toggleEnvironmentFilter ||
+              !activeRequest.settingDatasetFilter ||
               !ds.applyEnv ||
               ds.applyEnv === activeEnvironment?._id
           )
-          .map((dataset, i) => (
+          .map(dataset => (
             <DatasetRowEditor
-              // eslint-disable-next-line react/no-array-index-key
-              key={i}
+              key={dataset._id}
               onGenerateCodeWithDataset={handleGenerateCodeWithDataset}
               dataset={dataset}
               isBaseDataset={false}
@@ -252,7 +267,6 @@ export const RequestDatasetEditor: FC<Props> = ({ setLoading }) => {
               setLoading={setLoading}
             />
           ))}
-        {/* </ListGroup> */}
       </div>
     </div>
   );
