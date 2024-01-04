@@ -96,9 +96,8 @@ export const ChooseEnvironmentsDropdown: FC<Props> = ({
       ref={dropdownRef}
       // {...(other as Record<string, any>)}
       className={className}
-      isDisable={!activeEnvironment || activeEnvironment === baseEnvironment}
-      triggerButton={
-        <DropdownButton className="btn btn--super-compact no-wrap">
+    >
+      <DropdownButton className="btn btn--super-compact no-wrap">
         <StyledDropdownContainer>
           {!activeEnvironment && subEnvironments.length > 0 && (
             <Tooltip
@@ -106,7 +105,7 @@ export const ChooseEnvironmentsDropdown: FC<Props> = ({
               className="space-right"
               position="right"
             >
-                {/* <i className="fa fa-exclamation-triangle notice" /> */}
+              <i className="fa fa-exclamation-triangle notice" />
             </Tooltip>
           )}
           <div className="dropdown__text">
@@ -121,12 +120,9 @@ export const ChooseEnvironmentsDropdown: FC<Props> = ({
             ) : null} */}
             {description}
           </div>
-            {/* <i className="space-left fa fa-caret-down" /> */}
+          <i className="space-left fa fa-caret-down" />
         </StyledDropdownContainer>
       </DropdownButton>
-      }
-    >
-
 
       <DropdownDivider>Activate Environment</DropdownDivider>
       {subEnvironments.map(renderEnvironmentItem)}
