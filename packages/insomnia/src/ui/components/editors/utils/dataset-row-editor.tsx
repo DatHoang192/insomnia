@@ -110,12 +110,8 @@ const DatasetRowEditor: FC<Props> = ({
   onDuplicate,
   setLoading,
 }) => {
-  const {
-    activeEnvironment: globalActiveEnvironment,
-    activeWorkspace,
-    baseEnvironment,
-    subEnvironments,
-  } = useRouteLoaderData(':workspaceId') as WorkspaceLoaderData;
+  const { activeWorkspace, baseEnvironment, subEnvironments } =
+    useRouteLoaderData(':workspaceId') as WorkspaceLoaderData;
   const { activeRequest } = useRouteLoaderData(
     'request/:requestId'
   ) as RequestLoaderData;
@@ -123,7 +119,6 @@ const DatasetRowEditor: FC<Props> = ({
   const [isToggled, setIsToggled] = useState(false);
   const [datasetName, setDatasetName] = useState('');
   const [datasetKey, setDatasetKey] = useState(0);
-  const [activeEnvironment, setActiveEnvironment] = useState<Environment>();
   const [baseDataset, setBaseDataset] = useState<
     {
       id: string;
@@ -135,10 +130,13 @@ const DatasetRowEditor: FC<Props> = ({
       type: string;
     }[]
   >();
+  const environments = [baseEnvironment, ...subEnvironments];
+  const [activeEnvironment, setActiveEnvironment] = useState<
+    Environment | undefined
+  >(environments.find(e => e._id === dataset.applyEnv)); // define active environment for each dataset, not active environment in workspace
   const fetcher = useFetcher();
 
   const toggleIconRotation = -90;
-  const environments = [baseEnvironment, ...subEnvironments];
   // const isPercentageType = datasetPaneWidthType === DATASET_WIDTH_TYPE_PERCENTAGE;
   // const isFixedType = datasetPaneWidthType === DATASET_WIDTH_TYPE_FIX_LEFT;
   const isPercentageType = true;
