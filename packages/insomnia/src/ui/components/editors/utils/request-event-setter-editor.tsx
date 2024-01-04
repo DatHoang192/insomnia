@@ -10,6 +10,7 @@ import {
   SetterEventType,
   update,
 } from '../../../../models/request-setter';
+import { STATIC_CONTEXT_SOURCE_NAME } from '../../../../templating';
 import { useNunjucks } from '../../../context/nunjucks/use-nunjucks';
 import { RequestLoaderData } from '../../../routes/request';
 import { Button } from '../../themed-button';
@@ -52,8 +53,7 @@ export const RequestEventSetterEditor = () => {
   ) as RequestLoaderData;
 
   const loadData = async () => {
-    const request = activeRequest;
-    const settersData = (await findByParentId(request._id)) || [];
+    const settersData = (await findByParentId(activeRequest._id)) || [];
     const context = await handleGetRenderContext();
     const variablesData: RenderKey[] = context.keys.sort((a, b) => {
       if (a.meta?.type < b.meta?.type) {
@@ -83,6 +83,7 @@ export const RequestEventSetterEditor = () => {
         (s) => s.event === SetterEventType.DURING_SEND_REQUEST
       ),
     });
+
     setVariables(
       variablesData.filter((v) => v.meta?.type !== STATIC_CONTEXT_SOURCE_NAME)
     );
@@ -90,23 +91,30 @@ export const RequestEventSetterEditor = () => {
 
   useEffect(() => {
     loadData();
-  }, [activeRequest, handleGetRenderContext, setters]);
+  }, []);
 
   const _handleUpdateSetter = async (
     setter: RequestSetter,
     patch: Partial<RequestSetter>
   ) => {
-    await update(setter, patch);
-    await loadData();
+    try {
+      await update(setter, patch);
+      await loadData();
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   const _handleCreateNewSetter = async (type: SetterEventType) => {
-    console.log('it goes around');
-    await create({
-      parentId: activeRequest._id,
-      event: type,
-    });
-    await loadData();
+    try {
+      await create({
+        parentId: activeRequest._id,
+        event: type,
+      });
+      await loadData();
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   const _handleDeleteSetter = async (setter: RequestSetter) => {
@@ -123,7 +131,6 @@ export const RequestEventSetterEditor = () => {
       [type]: [],
     }));
 
-    // Reload data if necessary (assuming loadData is defined elsewhere)
     await loadData();
   };
 

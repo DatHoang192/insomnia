@@ -1,27 +1,28 @@
 import classNames from 'classnames';
-import React, { FC, useRef, useState } from 'react';
-import { useNunjucks } from '../../context/nunjucks/use-nunjucks';
+import React, { FC, useEffect, useRef, useState } from 'react';
+
+import { describeByteSize } from '../../../common/misc';
 import { Key } from '../../../templating/utils';
+import { useNunjucks } from '../../context/nunjucks/use-nunjucks';
 import {
   Dropdown,
   DropdownButton,
   DropdownItem,
   ItemContent,
 } from '../base/dropdown';
+import { PromptButton } from '../base/prompt-button';
 import {
   OneLineEditor,
   OneLineEditorHandle,
 } from '../codemirror/one-line-editor';
-import { describeByteSize } from '../../../common/misc';
 import { showModal } from '../modals';
 import { CodePromptModal } from '../modals/code-prompt-modal';
 import { Button } from '../themed-button';
-import { PromptButton } from '../base/prompt-button';
 
 export interface VariableSetterPair {
   id: string;
-  propertyName: string;
-  value: string;
+  objectKey: string;
+  setterValue: string;
   description: string;
   disabled: boolean;
   multiline: boolean;
@@ -58,11 +59,6 @@ interface Props {
   isDraggingOver?: boolean;
   variables: any[];
 }
-interface State {
-  dragDirection: number;
-  preview: string;
-  error: string;
-}
 
 export const VariableValueSetterRow: FC<Props> = ({
   pair,
@@ -88,7 +84,9 @@ export const VariableValueSetterRow: FC<Props> = ({
   const [preview, setPreview] = useState('');
   const [error, setError] = useState('');
   const inputRef = useRef<OneLineEditorHandle>(null);
+  const selectRef = useRef(null);
 
+  const selectedId = variables.findIndex((v) => v.name === pair.objectKey);
   const { handleRender, handleGetRenderContext } = useNunjucks();
 
   const _sendChange = (patch: Partial<VariableSetterPair>) => {
@@ -122,14 +120,20 @@ export const VariableValueSetterRow: FC<Props> = ({
       setPreview(preview);
       setError(error);
     }
-
     // Call the callback if we need to
     if (!noCallback) {
       _sendChange({
-        propertyName: stringValue,
+        objectKey: stringValue,
       });
     }
   };
+
+  useEffect(() => {
+    _update(pair.setterValue, true);
+    if (selectRef.current) {
+      selectRef.current.focus();
+    }
+  }, []);
 
   const classes = classNames(className, {
     'key-value-editor__row-wrapper': true,
@@ -151,14 +155,6 @@ export const VariableValueSetterRow: FC<Props> = ({
   if (keyWidth) {
     Object.assign(keyContainerStyle, keyWidth);
   }
-  const selectedId = variables.findIndex((v) => v.name === pair.propertyName);
-  const _setSelectRef = (n: HTMLSelectElement) => {
-    setVariableSelect(n);
-    // Let it render, then focus the input
-    setTimeout(() => {
-      variableSelect?.focus();
-    }, 100);
-  };
   const _handleBlurVariable = (e) => {
     if (onBlurName) {
       onBlurName(pair, e);
@@ -185,20 +181,20 @@ export const VariableValueSetterRow: FC<Props> = ({
 
   const _handleValueChange = (value) => {
     _sendChange({
-      value,
+      setterValue: value,
     });
   };
 
   const _handleEditMultiline = () => {
     showModal(CodePromptModal, {
       submitName: 'Done',
-      title: `Edit setter value for "${pair.propertyName}"`,
-      defaultValue: pair.value,
-    //   hideLineNumbers: false,
+      title: `Edit setter value for "${pair.objectKey}"`,
+      defaultValue: pair.setterValue,
+      //   hideLineNumbers: false,
       onChange: _handleValueChange,
       enableRender: !!handleRender || !!handleGetRenderContext,
       mode: `${pair.multiline}` || 'text/plain',
-      onModeChange: mode => {
+      onModeChange: (mode) => {
         _handleTypeChange(
           Object.assign({}, pair, {
             multiline: mode,
@@ -235,7 +231,7 @@ export const VariableValueSetterRow: FC<Props> = ({
 
   const renderPairValue = () => {
     if (pair.multiline) {
-      const bytes = Buffer.from(pair.value, 'utf8').length;
+      const bytes = Buffer.from(pair.setterValue, 'utf8').length;
       return (
         <button
           className='btn btn--outlined btn--super-duper-compact wide ellipsis'
@@ -253,7 +249,7 @@ export const VariableValueSetterRow: FC<Props> = ({
           readOnly={readOnly}
           type={'text'}
           placeholder={valuePlaceholder || 'Value'}
-          defaultValue={pair.value}
+          defaultValue={pair.setterValue}
           onChange={_handleValueChange}
           onKeyDown={(e, value) => _handleKeyDown(e, value)}
           getAutocompleteConstants={_handleAutocompleteValues}
@@ -276,7 +272,6 @@ export const VariableValueSetterRow: FC<Props> = ({
           style={keyContainerStyle}
         >
           <select
-            ref={(n) => _setSelectRef(n)}
             value={selectedId === -1 ? '' : selectedId}
             disabled={readOnly}
             onBlur={(e) => _handleBlurVariable(e)}

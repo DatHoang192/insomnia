@@ -112,10 +112,13 @@ const SetterEventRowEditor: FC<Props> = ({
   const classes = classNames('key-value-editor', 'wide', className);
 
   useEffect(() => {
-    // Migrate and add IDs to all pairs
-    const pairsTemp = _convertPropsPair(pairs);
-    setPairState(pairsTemp);
-    setIsToggled(!!pairsTemp.length && !pairs.length);
+    const convertedPairs = _convertPropsPair(pairs);
+    setPairState(convertedPairs);
+
+    // Handle toggling logic based on initial pairs
+    if (!pairs.length && convertedPairs.length) {
+      setIsToggled(true);
+    }
   }, [pairs]);
 
   useEffect(() => {
@@ -142,19 +145,19 @@ const SetterEventRowEditor: FC<Props> = ({
   };
 
   const _handlePairChange = (pair) => {
-    const setter = pairs.find((p) => p._id === pair.id);
+    const setter = pairs.find((p) => p._id === pair._id);
     if (setter && onChange) {
       const patch: Partial<RequestSetter> = {};
-      pair.propertyName && (patch.objectKey = pair.propertyName);
+      pair.objectKey && (patch.objectKey = pair.objectKey);
       pair.disabled !== undefined && (patch.enabled = !pair.disabled);
-      pair.value && (patch.setterValue = pair.value);
+      pair.setterValue && (patch.setterValue = pair.setterValue);
       pair.multiline !== undefined && (patch.multiline = pair.multiline);
       onChange(setter, patch);
     }
   };
 
   const _handlePairDelete = (pair) => {
-    const setter = pairs.find((p) => p._id === pair.id);
+    const setter = pairs.find((p) => p._id === pair._id);
     if (setter && onDelete) {
       onDelete(setter);
     }
@@ -162,7 +165,7 @@ const SetterEventRowEditor: FC<Props> = ({
 
   const _setFocusedPair = (pair) => {
     if (pair) {
-      setFocusedPairId(pair.id);
+      setFocusedPairId(pair._id);
     } else {
       setFocusedPairId(null);
     }
@@ -279,7 +282,7 @@ const SetterEventRowEditor: FC<Props> = ({
   const _updateFocus = () => {
     const pair = _getFocusedPair();
 
-    const id = pair ? pair.id : 'n/a';
+    const id = pair ? pair._id : 'n/a';
     const row = rows[id];
 
     if (!row) {
@@ -294,7 +297,7 @@ const SetterEventRowEditor: FC<Props> = ({
   };
 
   const _getFocusedPair = () => {
-    return pairState.find((p) => p.id === focusedPairId) || null;
+    return pairState.find((p) => p._id === focusedPairId) || null;
   };
 
   const _getFocusedPairIndex = () => {
@@ -303,7 +306,7 @@ const SetterEventRowEditor: FC<Props> = ({
 
   const _getPairIndex = (pair) => {
     if (pair) {
-      return pairState.findIndex((p) => p.id === pair.id);
+      return pairState.findIndex((p) => p._id === pair._id);
     } else {
       return -1;
     }
