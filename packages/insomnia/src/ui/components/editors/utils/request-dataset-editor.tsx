@@ -137,10 +137,6 @@ export const RequestDatasetEditor: FC<Props> = ({ setLoading }) => {
     }
   };
 
-  const onSendWithDataset = (dataset: RequestDataSet) => {
-    onSendWithDataset(activeRequest, dataset);
-  };
-
   const handleGenerateCode = (request: Request, dataset?: RequestDataSet) => {
     showModal(GenerateCodeModal, {
       request,
@@ -180,17 +176,17 @@ export const RequestDatasetEditor: FC<Props> = ({ setLoading }) => {
           environment: promotingEnvironment,
         }
       );
-      setBaseDataset(baseDatasetFromModels);
       promotingDataset = await models.requestDataset.update(promotingDataset, {
         environment: baseEnvironment,
       });
-      setOtherDatasets(
-        otherDatasets.map(ds =>
-          ds._id === promotingDataset._id ? { ...promotingDataset } : ds
-        )
-      );
-      if (baseDataset) {
-        onChange(baseDataset, otherDatasets, renderCount + 1);
+      if (baseDatasetFromModels) {
+        onChange(
+          baseDatasetFromModels,
+          otherDatasets.map(ds =>
+            ds._id === promotingDataset._id ? { ...promotingDataset } : ds
+          ),
+          renderCount + 1
+        );
       }
     }
   };
@@ -231,6 +227,7 @@ export const RequestDatasetEditor: FC<Props> = ({ setLoading }) => {
         <h4>Base dataset</h4>
         {baseDataset && (
           <DatasetRowEditor
+            key={baseDataset._id + renderCount}
             dataset={baseDataset}
             isBaseDataset={true}
             onChanged={onBaseDatasetChanged}
@@ -257,16 +254,16 @@ export const RequestDatasetEditor: FC<Props> = ({ setLoading }) => {
           )
           .map(dataset => (
             <DatasetRowEditor
-              key={dataset._id}
+              key={dataset._id + renderCount}
               onGenerateCodeWithDataset={handleGenerateCodeWithDataset}
               dataset={dataset}
               isBaseDataset={false}
               onChanged={onDatasetChanged}
               onDeleteDataset={onDeleteDataset}
-              onSendWithDataset={onSendWithDataset}
               setLoading={setLoading}
               onDuplicate={handleDuplicate}
               onToggleChanged={handleToggleChanged}
+              onPromoteToDefault={handlePromoteToDefault}
             />
           ))}
       </div>

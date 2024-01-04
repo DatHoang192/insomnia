@@ -30,7 +30,6 @@ interface Props {
   onDeleteDataset?: (dataset: RequestDataSet) => void;
   onPromoteToDefault?: (dataset: RequestDataSet) => void;
   onDuplicate?: (dataset: RequestDataSet) => void;
-  onSendWithDataset?: (dataset: RequestDataSet) => void;
   onGenerateCodeWithDataset?: (dataset: RequestDataSet) => void;
   onToggleChanged?: (dataset: RequestDataSet, toggle: boolean) => void;
   setLoading: (l: boolean) => void;
@@ -379,9 +378,7 @@ const DatasetRowEditor: FC<Props> = ({
   };
 
   const handleOnSetDefaultDataset = () => {
-    if (onPromoteToDefault) {
-      onPromoteToDefault(dataset);
-    }
+   onPromoteToDefault && onPromoteToDefault(dataset);
   };
 
   const handleOnDuplicate = () => {
