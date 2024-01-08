@@ -297,10 +297,13 @@ export const VariableValueSetterRow: FC<Props> = ({
           {renderPairValue()}
         </div>
 
-        <Dropdown>
-          <DropdownButton className='tall'>
-            <i className='fa fa-caret-down' />
-          </DropdownButton>
+        <Dropdown
+          triggerButton={
+            <DropdownButton className='tall'>
+              <i className='fa fa-caret-down' />
+            </DropdownButton>
+          }
+        >
           <DropdownItem>
             <ItemContent
               label='Text'
