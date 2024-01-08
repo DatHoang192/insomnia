@@ -24,7 +24,7 @@ export interface VariableSetterPair {
   objectKey: string;
   setterValue: string;
   description: string;
-  disabled: boolean;
+  enabled: boolean;
   multiline: boolean;
 }
 
@@ -137,7 +137,7 @@ export const VariableValueSetterRow: FC<Props> = ({
 
   const classes = classNames(className, {
     'key-value-editor__row-wrapper': true,
-    'key-value-editor__row-wrapper--disabled': pair.disabled,
+    'key-value-editor__row-wrapper--disabled': !pair.enabled,
   });
   //   let handle: JSX.Element | undefined | null = null;
   //   if (sortable) {
@@ -219,7 +219,7 @@ export const VariableValueSetterRow: FC<Props> = ({
 
   const _handleDisableChange = () => {
     _sendChange({
-      disabled: !pair.disabled,
+      enabled: !pair.enabled,
     });
   };
 
@@ -266,7 +266,7 @@ export const VariableValueSetterRow: FC<Props> = ({
           className={classNames(
             'form-control form-control--underlined form-control--wide',
             {
-              'form-control--inactive': pair.disabled,
+              'form-control--inactive': !pair.enabled,
             }
           )}
           style={keyContainerStyle}
@@ -290,7 +290,7 @@ export const VariableValueSetterRow: FC<Props> = ({
           className={classNames(
             'form-control form-control--underlined form-control--wide',
             {
-              'form-control--inactive': pair.disabled,
+              'form-control--inactive': !pair.enabled,
             }
           )}
         >
@@ -319,9 +319,9 @@ export const VariableValueSetterRow: FC<Props> = ({
           (!hideButtons ? (
             <Button
               onClick={_handleDisableChange}
-              title={pair.disabled ? 'Enable item' : 'Disable item'}
+              title={pair.enabled ? 'Enable item' : 'Disable item'}
             >
-              {pair.disabled ? (
+              {!pair.enabled ? (
                 <i className='fa fa-square-o' />
               ) : (
                 <i className='fa fa-check-square-o' />

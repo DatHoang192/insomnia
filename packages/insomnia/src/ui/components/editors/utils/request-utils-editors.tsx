@@ -35,7 +35,7 @@ const DefaultUtilsEditor: FC = () => (
 export const RequestUtilsEditors: FC<Props> = ({ activeTab, setLoading }) => {
   switch (activeTab) {
     case REQUEST_DATASET_EDITOR_TAB:
-      return <RequestDatasetEditor setLoading={setLoading} />;
+      return <RequestDatasetEditor {...{ setLoading }} />;
     case REQUEST_SETTER_EDITOR_TAB:
       return <RequestEventSetterEditor />;
     case RESPONSE_VISUALIZE_EDITOR_TAB:

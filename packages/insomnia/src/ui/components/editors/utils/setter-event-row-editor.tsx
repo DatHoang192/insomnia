@@ -149,7 +149,7 @@ const SetterEventRowEditor: FC<Props> = ({
     if (setter && onChange) {
       const patch: Partial<RequestSetter> = {};
       pair.objectKey && (patch.objectKey = pair.objectKey);
-      pair.disabled !== undefined && (patch.enabled = !pair.disabled);
+      pair.enabled !== undefined && (patch.enabled = pair.enabled);
       pair.setterValue && (patch.setterValue = pair.setterValue);
       pair.multiline !== undefined && (patch.multiline = pair.multiline);
       onChange(setter, patch);
