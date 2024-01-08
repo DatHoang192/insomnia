@@ -324,7 +324,7 @@ const SetterEventRowEditor: FC<Props> = ({
           onClick={_handleToggle}
           className='space-right'
         >
-          {isToggled ? (
+          {isToggled && pairs.length ? (
             <i className='fa fa-chevron-down' />
           ) : (
             <i className='fa fa-chevron-right' />
