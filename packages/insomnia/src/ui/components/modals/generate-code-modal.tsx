@@ -3,6 +3,7 @@ import React, { forwardRef, useCallback, useImperativeHandle, useRef, useState }
 
 import { exportHarRequest } from '../../../common/har';
 import { Request } from '../../../models/request';
+import { RequestDataSet } from '../../../models/request-dataset';
 import { CopyButton } from '../base/copy-button';
 import { Dropdown, DropdownButton, DropdownItem, ItemContent } from '../base/dropdown';
 import { Link } from '../base/link';
@@ -29,6 +30,7 @@ type Props = ModalProps & {
 };
 export interface GenerateCodeModalOptions {
   request?: Request;
+  dataset?: RequestDataSet;
 }
 export interface State {
   request?: Request;
@@ -62,7 +64,7 @@ export const GenerateCodeModal = forwardRef<GenerateCodeModalHandle, Props>((pro
 
   const [snippet, setSnippet] = useState<string>('');
 
-  const generateCode = useCallback(async (request: Request, target?: HTTPSnippetTarget, client?: HTTPSnippetClient) => {
+  const generateCode = useCallback(async (request: Request, target?: HTTPSnippetTarget, client?: HTTPSnippetClient, dataset?: RequestDataSet) => {
     const HTTPSnippet = (await import('httpsnippet')).default;
 
     const targets = HTTPSnippet.availableTargets();
@@ -81,7 +83,7 @@ export const GenerateCodeModal = forwardRef<GenerateCodeModalHandle, Props>((pro
 
     // Some clients need a content-length for the request to succeed
     const addContentLength = Boolean((TO_ADD_CONTENT_LENGTH[targetOrFallback.key] || []).find(c => c === clientOrFallback.key));
-    const har = await exportHarRequest(request._id, props.environmentId, addContentLength);
+    const har = await exportHarRequest(request._id, props.environmentId, addContentLength, dataset?._id);
     if (har) {
       const snippet = new HTTPSnippet(har);
       const cmd = snippet.convert(targetOrFallback.key, clientOrFallback.key) || '';
@@ -97,7 +99,7 @@ export const GenerateCodeModal = forwardRef<GenerateCodeModalHandle, Props>((pro
       if (!options.request) {
         return;
       }
-      generateCode(options.request, state.target, state.client);
+      generateCode(options.request, state.target, state.client, options.dataset);
       modalRef.current?.show();
     },
   }), [generateCode, state]);
