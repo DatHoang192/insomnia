@@ -14,10 +14,9 @@ export function init() {
           clientCertificates,
           caCert,
           activeEnvironmentId,
-          ancestors } = await fetchRequestData(req._id);
+        } = await fetchRequestData(req._id);
 
         const setters = await models.requestSetter.findByParentId(req._id);
-        const afterReceivedSetters = models.requestSetter.getAfterReceivedResponseSetters(setters);
           const dataset: RequestDataSet | null = await models.requestDataset.getById(datasetId || 'n/a');
           let backupDataset: RequestDataSet | null = null;
           if (dataset) {
@@ -34,13 +33,6 @@ export function init() {
         );
         const responsePatch = await responseTransform(response, activeEnvironmentId, renderedRequest, renderResult.context);
         responsePatch.dataset = backupDataset;
-        (responsePatch as any).onCreated = () => executeSetter(
-          afterReceivedSetters,
-          renderResult.context,
-          ancestors,
-          environment._id,
-          backupDataset,
-        );
         return models.response.create(responsePatch, settings.maxHistoryResponses);
       },
     },

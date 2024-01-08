@@ -20,8 +20,6 @@ const ENTER = 13;
 const BACKSPACE = 8;
 const UP = 38;
 const DOWN = 40;
-const LEFT = 37;
-const RIGHT = 39;
 
 interface Props {
   eventName: string;
