@@ -294,10 +294,9 @@ export const RequestSettingsModal = ({ request, onHide }: ModalProps & RequestSe
                         defaultValue={request.settingFollowRedirects}
                         name="settingFollowRedirects"
                         onChange={async event => {
-                          const updated = await models.request.update(request, {
+                            await models.request.update(request, {
                             [event.currentTarget.name]: event.currentTarget.value,
                           });
-                          setState(state => ({ ...state, request: updated }));
                         }}
                       >
                         <option value={'global'}>Use global setting</option>
