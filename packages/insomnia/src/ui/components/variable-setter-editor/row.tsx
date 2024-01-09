@@ -188,7 +188,7 @@ export const VariableValueSetterRow: FC<Props> = ({
   const _handleEditMultiline = () => {
     showModal(CodePromptModal, {
       submitName: 'Done',
-      title: `Edit setter value for "${pair.objectKey}"`,
+      title: `Edit setter value for ${pair.objectKey}`,
       defaultValue: pair.setterValue,
       //   hideLineNumbers: false,
       onChange: _handleValueChange,
@@ -297,10 +297,13 @@ export const VariableValueSetterRow: FC<Props> = ({
           {renderPairValue()}
         </div>
 
-        <Dropdown>
-          <DropdownButton className='tall'>
-            <i className='fa fa-caret-down' />
-          </DropdownButton>
+        <Dropdown
+          triggerButton={
+            <DropdownButton className='tall'>
+              <i className='fa fa-caret-down' />
+            </DropdownButton>
+          }
+        >
           <DropdownItem>
             <ItemContent
               label='Text'
