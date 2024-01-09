@@ -360,9 +360,7 @@ const DatasetRowEditor: FC<Props> = ({
 
   const handleOnGenerateCode = () => {
     const thisDataset = prepareDataset();
-    if (onGenerateCodeWithDataset) {
-      onGenerateCodeWithDataset(thisDataset);
-    }
+    onGenerateCodeWithDataset && onGenerateCodeWithDataset(thisDataset);
   };
 
   const changeDatasetName = (newName: string) => {
