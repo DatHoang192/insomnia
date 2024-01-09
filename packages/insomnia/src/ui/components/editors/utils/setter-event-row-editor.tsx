@@ -317,8 +317,12 @@ const SetterEventRowEditor: FC<Props> = ({
   return (
     <StyledContainer>
       <div className='event-header'>
-        <Button onClick={_handleToggle} className='space-right'>
-          {isToggled ? (
+        <Button
+          disabled={!pairs.length}
+          onClick={_handleToggle}
+          className='space-right'
+        >
+          {isToggled && pairs.length ? (
             <i className='fa fa-chevron-down' />
           ) : (
             <i className='fa fa-chevron-right' />
