@@ -525,7 +525,7 @@ export const sendAction: ActionFunction = async ({ request, params }) => {
     );
     responsePatch.dataset = backupDataset;
     // execute after received setters
-    (response as any).onCreated = () =>
+    (responsePatch as any).onCreated = () =>
       executeSetter(
         afterReceivedSetters,
         renderedResult.context,
