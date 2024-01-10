@@ -15,7 +15,9 @@ import * as models from '../models/index';
 import { isProtoDirectory } from '../models/proto-directory';
 import { isProtoFile } from '../models/proto-file';
 import { isRequest } from '../models/request';
+import { isRequestDataset } from '../models/request-dataset';
 import { isRequestGroup } from '../models/request-group';
+import { isRequestSetter } from '../models/request-setter';
 import { isUnitTest } from '../models/unit-test';
 import { isUnitTestSuite } from '../models/unit-test-suite';
 import { isWebSocketPayload } from '../models/websocket-payload';
@@ -35,7 +37,9 @@ import {
   EXPORT_TYPE_PROTO_DIRECTORY,
   EXPORT_TYPE_PROTO_FILE,
   EXPORT_TYPE_REQUEST,
+  EXPORT_TYPE_REQUEST_DATASET,
   EXPORT_TYPE_REQUEST_GROUP,
+  EXPORT_TYPE_REQUEST_SETTER,
   EXPORT_TYPE_UNIT_TEST,
   EXPORT_TYPE_UNIT_TEST_SUITE,
   EXPORT_TYPE_WEBSOCKET_PAYLOAD,
@@ -186,7 +190,9 @@ export async function exportRequestsData(
         isUnitTest(d) ||
         isProtoFile(d) ||
         isProtoDirectory(d) ||
-        isWebSocketPayload(d)
+        isWebSocketPayload(d) ||
+        isRequestDataset(d) ||
+        isRequestSetter(d)
       );
     });
     docs.push(...descendants);
@@ -209,7 +215,9 @@ export async function exportRequestsData(
           isWorkspace(d) ||
           isCookieJar(d) ||
           isEnvironment(d) ||
-          isApiSpec(d)
+          isApiSpec(d) ||
+          isRequestDataset(d) ||
+          isRequestSetter(d)
         )
       ) {
         return false;
@@ -260,6 +268,12 @@ export async function exportRequestsData(
       } else if (isApiSpec(d)) {
         // @ts-expect-error -- TSCONVERSION maybe this needs to be added to the upstream type?
         d._type = EXPORT_TYPE_API_SPEC;
+      } else if (isRequestDataset(d)) {
+        // @ts-expect-error -- TSCONVERSION maybe this needs to be added to the upstream type?
+        d._type = EXPORT_TYPE_REQUEST_DATASET;
+      } else if (isRequestSetter(d)) {
+        // @ts-expect-error -- TSCONVERSION maybe this needs to be added to the upstream type?
+        d._type = EXPORT_TYPE_REQUEST_SETTER;
       }
 
       // @ts-expect-error -- TSCONVERSION maybe this needs to be added to the upstream type?
