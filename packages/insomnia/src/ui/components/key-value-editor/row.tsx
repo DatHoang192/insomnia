@@ -45,6 +45,7 @@ interface Props {
   keyWidth?: React.CSSProperties;
   readOnlyKey?: boolean;
   ignoreSuggestKey?: boolean;
+  isDatasetEditor?: boolean;
 }
 
 export const Row: FC<Props> = ({
@@ -67,6 +68,7 @@ export const Row: FC<Props> = ({
   keyWidth,
   readOnlyKey,
   ignoreSuggestKey,
+  isDatasetEditor,
 }) => {
   const { enabled } = useNunjucksEnabled();
 
@@ -105,6 +107,7 @@ export const Row: FC<Props> = ({
             getAutocompleteConstants={ignoreSuggestKey ? undefined : () => handleGetAutocompleteNameConstants?.(pair) || []}
             readOnly={readOnly || readOnlyKey}
             onChange={name => onChange({ ...pair, name })}
+            isDatasetEditor={isDatasetEditor}
           />
         </div>
         <div
@@ -147,6 +150,7 @@ export const Row: FC<Props> = ({
               onChange={value => onChange({ ...pair, value })}
                   getAutocompleteConstants={ignoreSuggestKey ? undefined : () => handleGetAutocompleteNameConstants?.(pair) || []}
                   readOnly={readOnly || readOnlyKey}
+              isDatasetEditor={isDatasetEditor}
             />
           )
           }
@@ -164,6 +168,7 @@ export const Row: FC<Props> = ({
               placeholder={descriptionPlaceholder || 'Description'}
               defaultValue={pair.description || ''}
               onChange={description => onChange({ ...pair, description })}
+              isDatasetEditor={isDatasetEditor}
             />
           </div>
         ) : null}

@@ -24,6 +24,7 @@ export interface OneLineEditorProps {
   readOnly?: boolean;
   type?: string;
   onPaste?: (text: string) => void;
+  isDatasetEditor?: boolean;
 }
 
 export interface OneLineEditorHandle {
@@ -40,6 +41,7 @@ export const OneLineEditor = forwardRef<OneLineEditorHandle, OneLineEditorProps>
   readOnly,
   type,
   onPaste,
+  isDatasetEditor,
 }, ref) => {
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const codeMirror = useRef<CodeMirror.EditorFromTextArea | null>(null);
@@ -167,7 +169,7 @@ export const OneLineEditor = forwardRef<OneLineEditorHandle, OneLineEditorProps>
     codeMirror.current.on('copy', preventDefault);
     codeMirror.current.on('cut', preventDefault);
     codeMirror.current.on('dragstart', preventDefault);
-    codeMirror.current.setCursor({ line: -1, ch: -1 });
+    isDatasetEditor || codeMirror.current.setCursor({ line: -1, ch: -1 });
 
     // Actually set the value
     codeMirror.current?.setValue(defaultValue || '');

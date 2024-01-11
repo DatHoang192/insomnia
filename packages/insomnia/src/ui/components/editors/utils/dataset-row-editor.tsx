@@ -492,6 +492,7 @@ const DatasetRowEditor: FC<Props> = ({
               handleGetAutocompleteNameConstants={getCommonHeaderNames}
               handleGetAutocompleteValueConstants={getCommonHeaderValues}
               onChange={handleKeyValueUpdate}
+              isDatasetEditor={true}
             />
           )}
           {!baseDataset?.length && <span>Update base dataset first</span>}
