@@ -87,7 +87,6 @@ export const Toast: FC = () => {
     const stats = await models.stats.get();
     const {
       disableUpdateNotification,
-      updateAutomatically,
       updateChannel,
     } = await models.settings.get();
     let updatedNotification: ToastNotification | null = null;
@@ -95,7 +94,7 @@ export const Toast: FC = () => {
     try {
       const data = {
         app: getAppId(),
-        autoUpdatesDisabled: !updateAutomatically,
+        autoUpdatesDisabled: true,
         disableUpdateNotification,
         firstLaunch: stats.created,
         launches: stats.launches, // Used for account verification notifications
