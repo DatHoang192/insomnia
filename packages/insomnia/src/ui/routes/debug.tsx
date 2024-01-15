@@ -630,6 +630,14 @@ export const Debug: FC = () => {
     getItemKey: index => visibleCollection[index].doc._id,
   });
 
+  const handleRequestGroupCollapseAll = () => {
+    collection.forEach(item => {
+      if (item.doc.type === 'RequestGroup') {
+        groupMetaPatcher(item.doc._id, { collapsed: true });
+      }
+    });
+  };
+
   return (
     <SidebarLayout
       className="new-sidebar"
@@ -801,6 +809,13 @@ export const Debug: FC = () => {
                   </Button>
                 </div>
               </SearchField>
+              <Button
+                aria-label="Collapse all folders"
+                className="flex flex-shrink-0 items-center justify-center aspect-square h-full rounded-sm text-[--color-font] hover:bg-[--hl-xs] ring-1 ring-transparent transition-all text-sm"
+                onPress={handleRequestGroupCollapseAll}
+              >
+                <Icon icon="down-left-and-up-right-to-center" />
+              </Button>
               <Select
                 aria-label="Sort order"
                 className="h-full aspect-square"
