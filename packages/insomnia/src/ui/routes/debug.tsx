@@ -76,6 +76,7 @@ import { RequestPane } from '../components/panes/request-pane';
 import { ResponsePane } from '../components/panes/response-pane';
 import { SidebarLayout } from '../components/sidebar-layout';
 import { getMethodShortHand } from '../components/tags/method-tag';
+import { Tooltip } from '../components/tooltip';
 import { ConnectionCircle } from '../components/websockets/action-bar';
 import { RealtimeResponsePane } from '../components/websockets/realtime-response-pane';
 import { WebSocketRequestPane } from '../components/websockets/websocket-request-pane';
@@ -630,6 +631,14 @@ export const Debug: FC = () => {
     getItemKey: index => visibleCollection[index].doc._id,
   });
 
+  const handleRequestGroupCollapseAll = () => {
+    collection.forEach(item => {
+      if (item.doc.type === 'RequestGroup') {
+        groupMetaPatcher(item.doc._id, { collapsed: true });
+      }
+    });
+  };
+
   return (
     <SidebarLayout
       className="new-sidebar"
@@ -851,7 +860,17 @@ export const Debug: FC = () => {
                   </ListBox>
                 </Popover>
               </Select>
-
+            </div>
+            <div className="flex justify-around gap-1 p-[--padding-sm]">
+              <Tooltip message="Close all folders">
+                <Button
+                  aria-label="Collapse all folders"
+                  className="flex flex-shrink-0 items-center justify-center aspect-square aria-pressed:bg-[--hl-sm] h-full rounded-sm text-[--color-font] hover:bg-[--hl-xs] ring-1 ring-transparent transition-all text-sm"
+                  onPress={handleRequestGroupCollapseAll}
+                >
+                  <Icon icon="down-left-and-up-right-to-center" />
+                </Button>
+              </Tooltip>
               <MenuTrigger>
                 <Button
                   aria-label="Create in collection"
