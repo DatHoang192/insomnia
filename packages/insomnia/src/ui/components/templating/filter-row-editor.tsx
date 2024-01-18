@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Button } from 'react-aria-components';
 import { useRouteLoaderData } from 'react-router-dom';
 
 import { ArgumentValue } from '../../../templating/parser';
@@ -7,7 +8,6 @@ import { WorkspaceLoaderData } from '../../routes/workspace';
 import { PromptButton } from '../base/prompt-button';
 import { HelpTooltip } from '../help-tooltip';
 import PluginFilterArgumentsEditor from './plugin-filter-args-editor';
-import { Button } from 'react-aria-components';
 
 export interface AppliedNunjucksParsedFilter extends NunjucksParsedFilter {
   id: string;
@@ -57,7 +57,7 @@ const FilterRowEditor: React.FC<Props> = ({
   const row = (
     <li className={'filter-editor__row-wrapper'}>
       <div className='filter-header'>
-        {(filter.args?.length || 0) > 0 ? (
+        {!!filter.args?.length ? (
           <Button
             onPress={() => setIsToggled(!isToggled)}
             className='space-right'

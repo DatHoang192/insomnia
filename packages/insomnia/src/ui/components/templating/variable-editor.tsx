@@ -6,9 +6,12 @@ import { Workspace } from '../../../models/workspace';
 import { getFilterDefinitions, getTestDefinitions } from '../../../templating';
 import {
   ArgumentValue,
+  ParsedFilter,
+  ParsedVariableFilter,
   parseVariableAndFilter,
   stringifyVariableAndFilter,
 } from '../../../templating/parser';
+import { NunjucksParsedFilter } from '../../../templating/utils';
 import { useNunjucks } from '../../context/nunjucks/use-nunjucks';
 import FilterRowEditor, {
   AppliedNunjucksParsedFilter,
@@ -102,24 +105,32 @@ interface Props {
 export const VariableEditor: FC<Props> = ({ onChange, defaultValue }) => {
   const { handleRender, handleGetRenderContext } = useNunjucks();
   const [selected, setSelected] = useState(defaultValue);
-  const [options, setOptions] = useState<{ name: string; value: any }[]>([]);
+  const [options, setOptions] = useState<
+    { name: string; value: any; meta: { name: string; type: string } }[]
+  >([]);
   const [preview, setPreview] = useState('');
   const [error, setError] = useState('');
 
   // name state
 
-  const [isUserChooseCustom, setIsUserChooseCustom] = useState(false);
+  const [isUserChooseCustom, setIsUserChooseCustom] = useState<boolean>(false);
   const [isParseError, setIsParseError] = useState(true);
-  const [parsedValue, setParsedValue] = useState([]);
-  const [appliedFilters, setAppliedFilters] = useState([]);
-  const [filterDefinitions, setFilterDefinitions] = useState([]);
+  const [parsedValue, setParsedValue] = useState<ParsedVariableFilter[]>([]);
+  const [appliedFilters, setAppliedFilters] = useState<
+    AppliedNunjucksParsedFilter[]
+  >([]);
+  const [filterDefinitions, setFilterDefinitions] = useState<
+    NunjucksParsedFilter[]
+  >([]);
   const [variableSource, setVariableSource] = useState('');
 
-  const [rawData, setRawData] = useState(defaultValue);
+  const [rawData, setRawData] = useState<string | ParsedVariableFilter[]>(
+    defaultValue
+  );
   const [isUserChangeToCustom, setIsUserChangeToCustom] = useState<
     boolean | null
   >(null);
-  const [filterTests, setFilterTests] = useState([]);
+  const [filterTests, setFilterTests] = useState<string[]>([]);
 
   useEffect(() => {
     let isMounted = true;
@@ -127,7 +138,6 @@ export const VariableEditor: FC<Props> = ({ onChange, defaultValue }) => {
     let value = '';
     let parsedError = isParseError;
     const syncInterpolation = async () => {
-      console.log('in use Effect', rawData);
       if (typeof rawData === 'string') {
         parsedData = parseVariableAndFilter(rawData);
         value = rawData;
@@ -139,7 +149,6 @@ export const VariableEditor: FC<Props> = ({ onChange, defaultValue }) => {
         value = stringifyVariableAndFilter(parsedData);
       }
       try {
-        console.log('valueeeeee', value);
         const p = await handleRender(value);
         isMounted && setPreview(p);
         isMounted && setError('');
@@ -152,7 +161,7 @@ export const VariableEditor: FC<Props> = ({ onChange, defaultValue }) => {
       const filterTests = await getTestDefinitions();
 
       filterDefinitions.sort(f => (f.isPlugin ? 1 : -1));
-      const variables = context.keys.sort((a: any, b: any) => {
+      const variables: any = context.keys.sort((a: any, b: any) => {
         if (a.meta?.type < b.meta?.type) {
           return -1;
         } else if (a.meta?.type > b.meta?.type) {
@@ -173,9 +182,10 @@ export const VariableEditor: FC<Props> = ({ onChange, defaultValue }) => {
         const filters = parsedData.slice(1);
         const variable = parsedData[0];
         variableSource =
-          context.context.getKeysContext().keyContext[variable.value] || '';
+          context.context.getKeysContext().keyContext[variable.value as any] ||
+          '';
         filters.forEach((f, i) => {
-          const fd = filterDefinitions.find(fi => fi.name === f.name);
+          const fd: any = filterDefinitions.find(fi => fi.name === f.name);
           if (fd) {
             appliedFilters.push({
               ...fd,
@@ -195,7 +205,8 @@ export const VariableEditor: FC<Props> = ({ onChange, defaultValue }) => {
           filterDefinitions.sort(f => (f.isPlugin ? 1 : -1))
         );
         setAppliedFilters(appliedFilters);
-        setIsUserChooseCustom(isUserChangeToCustom);
+        typeof isUserChangeToCustom === 'boolean' &&
+          setIsUserChooseCustom(isUserChangeToCustom);
         setIsParseError(parsedError);
         setSelected(value);
         setVariableSource(variableSource);
@@ -228,7 +239,7 @@ export const VariableEditor: FC<Props> = ({ onChange, defaultValue }) => {
     appliedFilters: AppliedNunjucksParsedFilter[]
   ) => {
     const variable = parsedValue[0];
-    const filter = appliedFilters.map(f => ({
+    const filter: ParsedFilter[] = appliedFilters.map(f => ({
       dataType: 'filter',
       name: f.name,
       args: f.argsValues,
@@ -237,7 +248,7 @@ export const VariableEditor: FC<Props> = ({ onChange, defaultValue }) => {
     setIsUserChangeToCustom(null);
   };
 
-  const handleDeleteFilter = filter => {
+  const handleDeleteFilter = (filter: AppliedNunjucksParsedFilter) => {
     updateAppliedFilters(appliedFilters.filter(p => p.id !== filter.id));
   };
 
@@ -247,7 +258,10 @@ export const VariableEditor: FC<Props> = ({ onChange, defaultValue }) => {
     updateAppliedFilters(appliedFilters);
   };
 
-  const renderFilterItem = (filter, index) => {
+  const renderFilterItem = (
+    filter: AppliedNunjucksParsedFilter,
+    index: number
+  ) => {
     return (
       <FilterRowEditor
         key={index}
@@ -261,7 +275,9 @@ export const VariableEditor: FC<Props> = ({ onChange, defaultValue }) => {
     );
   };
 
-  const handleAddFilter = e => {
+  const handleAddFilter = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const filterName = e.target.value;
     const filter = filterDefinitions.find(f => f.name === filterName);
     if (filter) {
@@ -281,22 +297,26 @@ export const VariableEditor: FC<Props> = ({ onChange, defaultValue }) => {
     }
   };
 
-  const handleChangeCustom = e => {
+  const handleChangeCustom = (
+    e: React.ChangeEvent<HTMLInputElement & HTMLSelectElement>
+  ) => {
     const name = e.target.value;
     setRawData(name);
     setIsUserChangeToCustom(true);
   };
 
-  const handleChange = e => {
+  const handleChange = (
+    e:
+      | React.ChangeEvent<HTMLSelectElement>
+      | React.ChangeEvent<HTMLInputElement>
+  ) => {
     const name = e.target.value;
-    console.log(name);
     if (name === '<custom>') {
       setRawData(parsedValue);
       setIsUserChangeToCustom(true);
     } else {
-      let tempValue = [...parsedValue];
+      const tempValue = [...parsedValue];
       tempValue[0].value = name;
-      console.log(tempValue, parsedValue);
       setParsedValue(tempValue);
       setRawData(parsedValue);
       setIsUserChooseCustom(false);

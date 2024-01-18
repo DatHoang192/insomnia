@@ -5,8 +5,8 @@ import { database } from '../../../common/database';
 import { fnOrString } from '../../../common/misc';
 import { RenderKey } from '../../../common/render';
 import { metaSortKeySort } from '../../../common/sorting';
-import { request, requestGroup, types } from '../../../models';
-import { isRequest } from '../../../models/request';
+import { BaseModel, request, requestGroup, types } from '../../../models';
+import { isRequest, Request } from '../../../models/request';
 import { isRequestGroup, RequestGroup } from '../../../models/request-group';
 import { Workspace } from '../../../models/workspace';
 import { ArgumentValue } from '../../../templating/parser';
@@ -52,9 +52,9 @@ const PluginFilterArgumentsEditor: React.FC<Props> = ({
   onUpdate,
 }) => {
   const { args, argsValues } = filter;
-  const [allDocs, setAllDocs] = useState({});
+  const [allDocs, setAllDocs] = useState<Record<string, BaseModel[]>>({});
   const [loadingDocs, setLoadingDocs] = useState(false);
-  const [argsType, setArgsType] = useState(
+  const [argsType, setArgsType] = useState<NunjucksParsedFilterArgValue[]>(
     !args
       ? []
       : args.map((arg, i) => {
@@ -81,32 +81,34 @@ const PluginFilterArgumentsEditor: React.FC<Props> = ({
         })
   );
 
-  const sortRequests = (
-    _models: (Request | RequestGroup)[],
-    parentId: string
-  ) => {
-    let sortedModels: (Request | RequestGroup)[] = [];
-
-    _models
-      .filter(model => model.parentId === parentId)
-      .sort(metaSortKeySort)
-      .forEach(model => {
-        if (isRequest(model)) {
-          sortedModels.push(model);
-        }
-        if (isRequestGroup(model)) {
-          sortedModels = sortedModels.concat(sortRequests(_models, model._id));
-        }
-      });
-
-    return sortedModels;
-  };
-
   useEffect(() => {
     setLoadingDocs(true);
+    const sortRequests = (
+      _models: (Request | RequestGroup)[],
+      parentId: string
+    ) => {
+      let sortedModels: (Request | RequestGroup)[] = [];
+      _models
+        .filter(model => model.parentId === parentId)
+        .sort(metaSortKeySort)
+        .forEach(model => {
+          if (isRequest(model)) {
+            sortedModels.push(model);
+          }
+          if (isRequestGroup(model)) {
+            sortedModels = sortedModels.concat(
+              sortRequests(_models, model._id)
+            );
+          }
+        });
+      return sortedModels;
+    };
     const refreshModels = async () => {
       try {
-        const allDocs = {};
+        const allDocs: Record<
+          string,
+          (Request | RequestGroup)[] & BaseModel[]
+        > = {};
         for (const type of types()) {
           allDocs[type] = [];
         }
@@ -121,12 +123,11 @@ const PluginFilterArgumentsEditor: React.FC<Props> = ({
         const requests = allDocs[request.type] || [];
         const requestGroups = allDocs[requestGroup.type] || [];
 
-        const sortedReqs = sortRequests(
-          requests.concat(requestGroups),
-          workspace._id
-        );
+        const _models = requests.concat(requestGroups);
 
-        allDocs[models.request.type] = sortedReqs;
+        const sortedReqs = sortRequests(_models, workspace._id);
+
+        allDocs[request.type] = sortedReqs;
         setAllDocs(allDocs);
       } catch (error) {
         // Handle errors
@@ -213,7 +214,7 @@ const PluginFilterArgumentsEditor: React.FC<Props> = ({
   };
 
   const handleChange = (
-    e: React.SyntheticEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement & HTMLSelectElement>
   ) => {
     const parent = e.currentTarget.parentNode;
     let argIndex = -1;
@@ -267,6 +268,7 @@ const PluginFilterArgumentsEditor: React.FC<Props> = ({
           <option value={defaultValue}>{defaultSelector}</option>
           {filterTests.map((test: any, index) => {
             return (
+              // eslint-disable-next-line react/no-array-index-key
               <option key={index} value={test}>
                 {test}
               </option>
@@ -295,12 +297,12 @@ const PluginFilterArgumentsEditor: React.FC<Props> = ({
           // Show parent folder with name if it's a request
           if (isRequest(doc)) {
             const requests = allDocs[request.type] || [];
-            const request: any = requests.find(r => r._id === doc._id);
+            const tempRequest: any = requests.find(r => r._id === doc._id);
             const method =
-              request && typeof request.method === 'string'
-                ? request.method
+              request && typeof tempRequest.method === 'string'
+                ? tempRequest.method
                 : 'GET';
-            const parentId = request ? request.parentId : 'n/a';
+            const parentId = request ? tempRequest.parentId : 'n/a';
             const allRequestGroups = allDocs[requestGroup.type] || [];
             const requestGroupPrefix = resolveRequestGroupPrefix(
               parentId,
@@ -351,6 +353,7 @@ const PluginFilterArgumentsEditor: React.FC<Props> = ({
   const renderArgVariable = (path: string) => (
     <select value={path || ''} onChange={handleChangeEnvironmentVariable}>
       {variables.map((v, i) => (
+        // eslint-disable-next-line react/no-array-index-key
         <option key={`${i}::${v.name}`} value={v.name}>
           {v.name}
         </option>
@@ -556,7 +559,6 @@ const PluginFilterArgumentsEditor: React.FC<Props> = ({
               }
             >
               <DropdownSection aria-label='Input Type' title='Input Type'>
-                {/* <DropdownDivider>Input Type</DropdownDivider> */}
                 <DropdownItem aria-label='Static Value'>
                   <ItemContent
                     icon={
