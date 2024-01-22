@@ -1503,6 +1503,9 @@ html {
   align-items: center;
   white-space: nowrap;
 }
+.editor .CodeMirror-dialog label{
+  flex: 1;
+}
 .editor .CodeMirror-dialog input {
   font-family: var(--font-monospace) !important;
   border: 0 !important;
@@ -1512,6 +1515,9 @@ html {
   width: 100% !important;
   color: var(--color-font);
   min-height: 1.5em;
+}
+.editor .CodeMirror-dialog span {
+  width: auto;
 }
 .editor .CodeMirror-dialog * {
   margin-left: 0.25em;
