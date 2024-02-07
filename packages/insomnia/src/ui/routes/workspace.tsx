@@ -57,6 +57,8 @@ export interface Child {
   pinned: boolean;
   level: number;
   ancestors?: string[];
+  parentIsCollapsed: boolean;
+  matched: boolean;
 }
 
 export const workspaceLoader: LoaderFunction = async ({
@@ -142,6 +144,29 @@ export const workspaceLoader: LoaderFunction = async ({
   const grpcAndRequestMetas = [...requestMetas, ...grpcRequestMetas] as (RequestMeta | GrpcRequestMeta)[];
   const requestGroupMetas = await database.find(models.requestGroupMeta.type, { parentId: { $in: listOfParentIds } }) as RequestGroupMeta[];
 
+  function matchChildren(children: Child[], parentNames: string[] = []) {
+    // Bail early if no filter defined
+    if (!filter) {
+      return children;
+    }
+
+    for (const child of children) {
+      // Gather all parents so we can match them too
+      matchChildren(child.children, [...parentNames, child.doc.name]);
+      const hasMatchedChildren = child.children.find(c => c.matched === true);
+      // Try to match request attributes
+      const match = fuzzyMatchAll(filter, [child.doc.name, child.doc.description, ...(isRequestGroup(child.doc) ? [] : [child.doc.url]), ...parentNames], {
+        splitSpace: true,
+      });
+      // Update hidden state depending on whether it matched
+      const matched = hasMatchedChildren || match;
+      child.matched = !!matched;
+      child.hidden = child.parentIsCollapsed || !matched;
+    }
+
+    return children;
+  };
+
   // second recursion to build the tree
   const getCollectionTree = async ({
     parentId,
@@ -156,27 +181,10 @@ export const workspaceLoader: LoaderFunction = async ({
     const childrenWithChildren: Child[] = await Promise.all(levelReqs
         .sort(sortFunction)
         .map(async (doc): Promise<Child> => {
-          const isMatched = (filter: string): boolean =>
-            Boolean(fuzzyMatchAll(
-              filter,
-              [
-                doc.name,
-                doc.description,
-                ...(isRequestGroup(doc) ? [] : [doc.url]),
-              ],
-              { splitSpace: false, loose: true }
-            )?.indexes);
-          const shouldHide = Boolean(filter && !isMatched(filter));
-          const hidden = parentIsCollapsed || shouldHide;
-
           const pinned =
             !isRequestGroup(doc) && grpcAndRequestMetas.find(m => m.parentId === doc._id)?.pinned || false;
-          const collapsed = filter
-            ? false
-            : parentIsCollapsed ||
-              (isRequestGroup(doc) &&
-              requestGroupMetas.find(m => m.parentId === doc._id)?.collapsed) ||
-              false;
+          const hidden = parentIsCollapsed;
+          const collapsed = parentIsCollapsed || (isRequestGroup(doc) && !!requestGroupMetas.find(m => m.parentId === doc._id)?.collapsed);
 
           const docAncestors = [...ancestors, parentId];
 
@@ -186,6 +194,8 @@ export const workspaceLoader: LoaderFunction = async ({
             collapsed,
             hidden,
             level,
+            parentIsCollapsed,
+            matched: false,
             ancestors: docAncestors,
             children: await getCollectionTree({
               parentId: doc._id,
@@ -197,7 +207,7 @@ export const workspaceLoader: LoaderFunction = async ({
         }),
     );
 
-    return childrenWithChildren;
+    return matchChildren(childrenWithChildren);
   };
   const requestTree = await getCollectionTree({
     parentId: activeWorkspace._id,
