@@ -1,6 +1,7 @@
 import { IconName } from '@fortawesome/fontawesome-svg-core';
 import { ServiceError, StatusObject } from '@grpc/grpc-js';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import classnames from 'classnames';
 import React, { FC, Fragment, useEffect, useRef, useState } from 'react';
 import {
   Breadcrumbs,
@@ -1035,6 +1036,20 @@ export const Debug: FC = () => {
               >
                 {virtualItem => {
                   const item = visibleCollection[virtualItem.index];
+                  function hasActiveChild(children: Child[]) {
+                    for (const c of children) {
+                      if (hasActiveChild(c.children || [])) {
+                        return true;
+                      } else if (c.doc._id === activeRequest?._id) {
+                        return true;
+                      }
+                    }
+
+                    // Didn't find anything, so return
+                    return false;
+                  }
+                  const isActiveItem = hasActiveChild(item.children) || activeRequest?._id === item.doc._id;
+
                   return (
                     <Item
                       className="group outline-none absolute top-0 left-0 select-none w-full"
@@ -1091,7 +1106,9 @@ export const Debug: FC = () => {
                           value={getRequestNameOrFallback(item.doc)}
                           name="request name"
                           ariaLabel="request name"
-                          className="px-1 flex-1"
+                          className={classnames('px-1', 'flex-1', 'faded', {
+                            'sidebar__item--active': isActiveItem,
+                          })}
                           onSingleClick={() => {
                             if (item && isRequestGroup(item.doc)) {
                               groupMetaPatcher(item.doc._id, { collapsed: !item.collapsed });
