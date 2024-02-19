@@ -1127,7 +1127,7 @@ export const Debug: FC = () => {
                           value={getRequestNameOrFallback(item.doc)}
                           name="request name"
                           ariaLabel="request name"
-                          className={classnames('px-1', 'flex-1', 'faded', {
+                          className={classnames('px-1', 'flex-1', 'sidebar__item--inactive', {
                             'sidebar__item--active': isActiveItem,
                           })}
                           onSingleClick={() => {
