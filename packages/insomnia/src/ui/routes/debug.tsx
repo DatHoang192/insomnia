@@ -653,16 +653,37 @@ export const Debug: FC = () => {
     });
   }, [collection, groupMetaPatcher]);
 
-  const handleJumpToActiveRequest = useCallback(() => {
-    collection.forEach(item => {
+  const handleJumpToActiveRequest = useCallback(async () => {
+    // Handle show active request
+    for (const item of collection) {
       if (!hasActiveChild(item.children) && item.doc._id !== activeRequest?._id) {
-        return;
+        continue;
       }
       if (item && isRequestGroup(item.doc)) {
         groupMetaPatcher(item.doc._id, { collapsed: false });
       };
-    });
+    }
+    // Handle scroll to active request
+    parentRef.current?.querySelector('[aria-selected="true"]')?.scrollIntoView();
   }, [activeRequest?._id, collection, groupMetaPatcher, hasActiveChild]);
+
+  useEffect(() => {
+    const mutationObserver = new MutationObserver(async () => {
+      const activeRequest = parentRef.current?.querySelector('[aria-selected="true"]');
+      activeRequest?.scrollIntoView();
+    });
+
+    if (parentRef.current) {
+      mutationObserver.observe(parentRef.current, {
+        childList: true,
+        subtree: true,
+      });
+    }
+
+    return () => {
+      mutationObserver.disconnect();
+    };
+}, []);
 
   return (
     <SidebarLayout
