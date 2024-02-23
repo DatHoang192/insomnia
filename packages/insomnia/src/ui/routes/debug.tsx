@@ -1,7 +1,8 @@
 import { IconName } from '@fortawesome/fontawesome-svg-core';
 import { ServiceError, StatusObject } from '@grpc/grpc-js';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import React, { FC, Fragment, useEffect, useRef, useState } from 'react';
+import classnames from 'classnames';
+import React, { FC, Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import {
   Breadcrumbs,
   Button,
@@ -191,6 +192,7 @@ export const Debug: FC = () => {
   const [isRequestSettingsModalOpen, setIsRequestSettingsModalOpen] =
     useState(false);
   const [isEnvironmentModalOpen, setEnvironmentModalOpen] = useState(false);
+  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
 
   const patchRequest = useRequestPatcher();
   const patchGroup = useRequestGroupPatcher();
@@ -399,6 +401,14 @@ export const Debug: FC = () => {
       window.main.grpc.closeAll();
     };
   }, [activeEnvironment?._id]);
+
+  // Clean up old timeout when a new timeout is set or when the component unmounts
+  useEffect(() => {
+    return () => {
+      timeoutId && clearTimeout(timeoutId);
+    };
+  }, [timeoutId]);
+
   const isRealtimeRequest =
     activeRequest &&
     (isWebSocketRequest(activeRequest) || isEventStreamRequest(activeRequest));
@@ -623,6 +633,10 @@ export const Debug: FC = () => {
   const visibleCollection = collection.filter(item => !item.hidden);
 
   const parentRef = useRef<HTMLDivElement>(null);
+  const mutationObserverRef = useRef<MutationObserver>(new MutationObserver(async () => {
+    const activeRequestDOM = parentRef.current?.querySelector('[aria-selected="true"]');
+    activeRequestDOM?.scrollIntoView();
+  }));
   const virtualizer = useVirtualizer<HTMLDivElement | null, Child>({
     getScrollElement: () => parentRef.current,
     count: visibleCollection.length,
@@ -631,13 +645,53 @@ export const Debug: FC = () => {
     getItemKey: index => visibleCollection[index].doc._id,
   });
 
-  const handleRequestGroupCollapseAll = () => {
+  const hasActiveChild = useCallback((children: Child[]) => {
+    for (const c of children) {
+      if (hasActiveChild(c.children || [])) {
+        return true;
+      } else if (c.doc._id === activeRequest?._id) {
+        return true;
+      }
+    }
+
+    // Didn't find anything, so return
+    return false;
+  }, [activeRequest?._id]);
+
+  const handleRequestGroupCollapseAll = useCallback(() => {
     collection.forEach(item => {
       if (item.doc.type === 'RequestGroup') {
         groupMetaPatcher(item.doc._id, { collapsed: true });
       }
     });
-  };
+  }, [collection, groupMetaPatcher]);
+
+  const handleJumpToActiveRequest = useCallback(async () => {
+    // Handle show active request
+    for (const item of collection) {
+      if (!hasActiveChild(item.children) && item.doc._id !== activeRequest?._id) {
+        continue;
+      }
+      if (item && isRequestGroup(item.doc)) {
+        groupMetaPatcher(item.doc._id, { collapsed: false });
+      };
+    }
+    // Handle scroll to active request
+    const activeRequestDOM = parentRef.current?.querySelector('[aria-selected="true"]');
+    const ACTIVE_REQUEST_MOUNT_TO_DOM_TIMEOUT = 1000;
+    if (activeRequestDOM) {
+      activeRequestDOM.scrollIntoView();
+    } else {
+      mutationObserverRef.current.observe(parentRef.current as HTMLDivElement, {
+        childList: true,
+        subtree: true,
+      });
+      const id = setTimeout(() => {
+        mutationObserverRef.current.disconnect();
+      }, ACTIVE_REQUEST_MOUNT_TO_DOM_TIMEOUT);
+      setTimeoutId(id);
+    }
+  }, [activeRequest?._id, collection, groupMetaPatcher, hasActiveChild]);
 
   return (
     <SidebarLayout
@@ -871,6 +925,15 @@ export const Debug: FC = () => {
                   <Icon icon="down-left-and-up-right-to-center" />
                 </Button>
               </Tooltip>
+              <Tooltip message="Jump to active request">
+                <Button
+                  aria-label="Jump to active request"
+                  className="flex flex-shrink-0 items-center justify-center aspect-square aria-pressed:bg-[--hl-sm] h-full rounded-sm text-[--color-font] hover:bg-[--hl-xs] ring-1 ring-transparent transition-all text-sm"
+                  onPress={handleJumpToActiveRequest}
+                >
+                  <Icon icon="anchor" />
+                </Button>
+              </Tooltip>
               <MenuTrigger>
                 <Button
                   aria-label="Create in collection"
@@ -1035,6 +1098,8 @@ export const Debug: FC = () => {
               >
                 {virtualItem => {
                   const item = visibleCollection[virtualItem.index];
+                  const isActiveItem = hasActiveChild(item.children) || activeRequest?._id === item.doc._id;
+
                   return (
                     <Item
                       className="group outline-none absolute top-0 left-0 select-none w-full"
@@ -1091,7 +1156,9 @@ export const Debug: FC = () => {
                           value={getRequestNameOrFallback(item.doc)}
                           name="request name"
                           ariaLabel="request name"
-                          className="px-1 flex-1"
+                          className={classnames('px-1', 'flex-1', 'sidebar__item--inactive', {
+                            'sidebar__item--active': isActiveItem,
+                          })}
                           onSingleClick={() => {
                             if (item && isRequestGroup(item.doc)) {
                               groupMetaPatcher(item.doc._id, { collapsed: !item.collapsed });

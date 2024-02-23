@@ -3126,6 +3126,14 @@ input.editable {
 .sidebar .sidebar__item.sidebar__item--big {
   grid-template-rows: var(--line-height-sm);
 }
+
+.sidebar__item--inactive {
+  opacity: 0.5;
+}
+
+.sidebar__item--active {
+  opacity: 1;
+}
 .sidebar .sidebar__item.sidebar__item--active > button {
   color: var(--color-font);
 }
