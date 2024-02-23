@@ -192,6 +192,7 @@ export const Debug: FC = () => {
   const [isRequestSettingsModalOpen, setIsRequestSettingsModalOpen] =
     useState(false);
   const [isEnvironmentModalOpen, setEnvironmentModalOpen] = useState(false);
+  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
 
   const patchRequest = useRequestPatcher();
   const patchGroup = useRequestGroupPatcher();
@@ -400,6 +401,14 @@ export const Debug: FC = () => {
       window.main.grpc.closeAll();
     };
   }, [activeEnvironment?._id]);
+
+  // Clean up old timeout when a new timeout is set or when the component unmounts
+  useEffect(() => {
+    return () => {
+      timeoutId && clearTimeout(timeoutId);
+    };
+  }, [timeoutId]);
+
   const isRealtimeRequest =
     activeRequest &&
     (isWebSocketRequest(activeRequest) || isEventStreamRequest(activeRequest));
@@ -624,6 +633,10 @@ export const Debug: FC = () => {
   const visibleCollection = collection.filter(item => !item.hidden);
 
   const parentRef = useRef<HTMLDivElement>(null);
+  const mutationObserverRef = useRef<MutationObserver>(new MutationObserver(async () => {
+    const activeRequestDOM = parentRef.current?.querySelector('[aria-selected="true"]');
+    activeRequestDOM?.scrollIntoView();
+  }));
   const virtualizer = useVirtualizer<HTMLDivElement | null, Child>({
     getScrollElement: () => parentRef.current,
     count: visibleCollection.length,
@@ -664,26 +677,21 @@ export const Debug: FC = () => {
       };
     }
     // Handle scroll to active request
-    parentRef.current?.querySelector('[aria-selected="true"]')?.scrollIntoView();
-  }, [activeRequest?._id, collection, groupMetaPatcher, hasActiveChild]);
-
-  useEffect(() => {
-    const mutationObserver = new MutationObserver(async () => {
-      const activeRequest = parentRef.current?.querySelector('[aria-selected="true"]');
-      activeRequest?.scrollIntoView();
-    });
-
-    if (parentRef.current) {
-      mutationObserver.observe(parentRef.current, {
+    const activeRequestDOM = parentRef.current?.querySelector('[aria-selected="true"]');
+    const ACTIVE_REQUEST_MOUNT_TO_DOM_TIMEOUT = 1000;
+    if (activeRequestDOM) {
+      activeRequestDOM.scrollIntoView();
+    } else {
+      mutationObserverRef.current.observe(parentRef.current as HTMLDivElement, {
         childList: true,
         subtree: true,
       });
+      const id = setTimeout(() => {
+        mutationObserverRef.current.disconnect();
+      }, ACTIVE_REQUEST_MOUNT_TO_DOM_TIMEOUT);
+      setTimeoutId(id);
     }
-
-    return () => {
-      mutationObserver.disconnect();
-    };
-}, []);
+  }, [activeRequest?._id, collection, groupMetaPatcher, hasActiveChild]);
 
   return (
     <SidebarLayout
