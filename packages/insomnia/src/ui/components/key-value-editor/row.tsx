@@ -46,6 +46,7 @@ interface Props {
   readOnlyKey?: boolean;
   ignoreSuggestKey?: boolean;
   isDatasetEditor?: boolean;
+  isBaseDatasetEditor?: boolean;
 }
 
 export const Row: FC<Props> = ({
@@ -69,6 +70,7 @@ export const Row: FC<Props> = ({
   readOnlyKey,
   ignoreSuggestKey,
   isDatasetEditor,
+  isBaseDatasetEditor,
 }) => {
   const { enabled } = useNunjucksEnabled();
 
@@ -207,7 +209,7 @@ export const Row: FC<Props> = ({
           </Dropdown>
         ) : null}
 
-        {!noToggle && !hideButtons ? (
+        {!noToggle && !hideButtons && !isDatasetEditor ? (
           <button
             onClick={() => onChange({ ...pair, disabled: !pair.disabled })}
             title={pair.disabled ? 'Enable item' : 'Disable item'}
@@ -224,7 +226,7 @@ export const Row: FC<Props> = ({
           </button>
         )}
 
-        {!hideButtons ? (
+        {!hideButtons && !isDatasetEditor && !isBaseDatasetEditor ? (
           <PromptButton
             tabIndex={-1}
             confirmMessage=""

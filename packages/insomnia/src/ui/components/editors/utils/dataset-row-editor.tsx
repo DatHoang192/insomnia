@@ -388,19 +388,6 @@ const DatasetRowEditor: FC<Props> = ({
   if (isBaseDataset) {
     return (
       <StyledKeyPairSpliterContainer>
-        {/* <div className="width-evaluater" ref={handleSetRequestDatasetPaneRef} />
-          <div
-            className="spliter"
-            onMouseDown={handleStartDragDatasetPaneHorizontal}
-            onDoubleClick={handleResetDragDatasetPaneHorizontal}
-            style={spliterStyle}
-          >
-            <i
-              className={classnames('fa', { 'fa-arrows-h': isPercentageType }, { 'fa-arrow-right': isFixedType })}
-              // @ts-expect-error -- TSCONVERSION
-              onClick={handleToggleDatasetResizeType}
-            />
-          </div> */}
         {baseDataset && (
           <KeyValueEditor
             namePlaceholder="data key"
@@ -410,6 +397,8 @@ const DatasetRowEditor: FC<Props> = ({
             handleGetAutocompleteNameConstants={getCommonHeaderNames}
             handleGetAutocompleteValueConstants={getCommonHeaderValues}
             onChange={handleKeyValueUpdate}
+            isDatasetEditor={true}
+            isBaseDatasetEditor={true}
           />
         )}
       </StyledKeyPairSpliterContainer>
@@ -481,7 +470,7 @@ const DatasetRowEditor: FC<Props> = ({
 
       {isOpenDataset && (
         <div>
-          {baseDataset?.length && (
+          {!!baseDataset?.length && (
             <KeyValueEditor
               key={datasetKey}
               namePlaceholder="data key"
@@ -493,9 +482,10 @@ const DatasetRowEditor: FC<Props> = ({
               handleGetAutocompleteValueConstants={getCommonHeaderValues}
               onChange={handleKeyValueUpdate}
               isDatasetEditor={true}
+              isBaseDatasetEditor={false}
             />
           )}
-          {!baseDataset?.length && <span>Update base dataset first</span>}
+          {baseDataset?.length === 0 && <span>Update base dataset first</span>}
         </div>
       )}
     </StyledResultListItem>

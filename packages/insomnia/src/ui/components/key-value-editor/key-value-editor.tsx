@@ -42,6 +42,7 @@ interface Props {
   pairs: Pair[];
   valuePlaceholder?: string;
   isDatasetEditor?: boolean;
+  isBaseDatasetEditor?: boolean;
 }
 
 export const KeyValueEditor: FC<Props> = ({
@@ -58,6 +59,7 @@ export const KeyValueEditor: FC<Props> = ({
   pairs,
   valuePlaceholder,
   isDatasetEditor,
+  isBaseDatasetEditor,
 }) => {
   // We should make the pair.id property required and pass them in from the parent
   // smelly
@@ -165,6 +167,7 @@ export const KeyValueEditor: FC<Props> = ({
               description: '',
             }])}
             isDatasetEditor={isDatasetEditor}
+            isBaseDatasetEditor={isBaseDatasetEditor}
           />
         ))}
       </ul>
