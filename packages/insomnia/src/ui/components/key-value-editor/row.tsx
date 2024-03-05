@@ -220,11 +220,9 @@ export const Row: FC<Props> = ({
               <i className="fa fa-check-square-o" />
             )}
           </button>
-        ) : (
-          <button>
-            <i className="fa fa-empty" />
-          </button>
-        )}
+        ) :
+          null
+        }
 
         {!hideButtons && (isBaseDatasetEditor || !isDatasetEditor)  ? (
           <PromptButton
@@ -235,11 +233,9 @@ export const Row: FC<Props> = ({
           >
             <i className="fa fa-trash-o" />
           </PromptButton>
-        ) : (
-          <button>
-            <i className="fa fa-empty" />
-          </button>
-        )}
+        ) :
+          null
+        }
       </div>
     </li>
   );
