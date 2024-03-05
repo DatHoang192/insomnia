@@ -226,7 +226,7 @@ export const Row: FC<Props> = ({
           </button>
         )}
 
-        {!hideButtons && !isDatasetEditor && !isBaseDatasetEditor ? (
+        {!hideButtons && (isBaseDatasetEditor || !isDatasetEditor)  ? (
           <PromptButton
             tabIndex={-1}
             confirmMessage=""
