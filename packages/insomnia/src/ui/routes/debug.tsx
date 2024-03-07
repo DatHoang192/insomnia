@@ -852,6 +852,9 @@ export const Debug: FC = () => {
                     ...Object.fromEntries(searchParams.entries()),
                     filter,
                   });
+                  if (!filter) {
+                    handleJumpToActiveRequest();
+                  }
                 }}
               >
                 <Input
