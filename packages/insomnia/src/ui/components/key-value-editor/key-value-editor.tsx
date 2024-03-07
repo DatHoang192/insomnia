@@ -1,5 +1,5 @@
 import classnames from 'classnames';
-import React, { FC, Fragment } from 'react';
+import React, { FC, Fragment, useMemo } from 'react';
 import styled from 'styled-components';
 
 import { generateId } from '../../../common/misc';
@@ -42,6 +42,7 @@ interface Props {
   pairs: Pair[];
   valuePlaceholder?: string;
   isDatasetEditor?: boolean;
+  isBaseDatasetEditor?: boolean;
 }
 
 export const KeyValueEditor: FC<Props> = ({
@@ -58,6 +59,7 @@ export const KeyValueEditor: FC<Props> = ({
   pairs,
   valuePlaceholder,
   isDatasetEditor,
+  isBaseDatasetEditor,
 }) => {
   // We should make the pair.id property required and pass them in from the parent
   // smelly
@@ -72,37 +74,43 @@ export const KeyValueEditor: FC<Props> = ({
   ].map(pair => ({ ...pair, id: generateId('pair') }));
 
   const [showDescription, setShowDescription] = React.useState(false);
+  const isToolbarShown = useMemo(
+    () => isBaseDatasetEditor || !isDatasetEditor,
+    [isBaseDatasetEditor, isDatasetEditor]
+  );
 
   return (
     <Fragment>
-      <Toolbar>
-        <button
-          className="btn btn--compact"
-          onClick={() =>
-            onChange([
-              ...pairs,
-              {
-                // smelly
-                id: generateId('pair'),
-                name: '',
-                value: '',
-                description: '',
-              },
-            ])
-          }
-        >
-          Add
-        </button>
-        <PromptButton className="btn btn--compact" onClick={() => onChange([])}>
-          Delete All
-        </PromptButton>
-        <button
-          className="btn btn--compact"
-          onClick={() => setShowDescription(!showDescription)}
-        >
-          Toggle Description
-        </button>
-      </Toolbar>
+      {isToolbarShown && (
+        <Toolbar>
+          <button
+            className="btn btn--compact"
+            onClick={() =>
+              onChange([
+                ...pairs,
+                {
+                  // smelly
+                  id: generateId('pair'),
+                  name: '',
+                  value: '',
+                  description: '',
+                },
+              ])
+            }
+          >
+            Add
+          </button>
+          <PromptButton className="btn btn--compact" onClick={() => onChange([])}>
+            Delete All
+          </PromptButton>
+          <button
+            className="btn btn--compact"
+            onClick={() => setShowDescription(!showDescription)}
+          >
+            Toggle Description
+          </button>
+        </Toolbar>
+      )}
       <ul className={classnames('key-value-editor', 'wide', className)}>
         {pairs.length === 0 && (
           <Row
@@ -165,6 +173,7 @@ export const KeyValueEditor: FC<Props> = ({
               description: '',
             }])}
             isDatasetEditor={isDatasetEditor}
+            isBaseDatasetEditor={isBaseDatasetEditor}
           />
         ))}
       </ul>
