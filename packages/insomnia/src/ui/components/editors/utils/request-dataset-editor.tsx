@@ -225,7 +225,10 @@ export const RequestDatasetEditor: FC<Props> = ({ setLoading }) => {
     }
   };
 
-  const handleSearchTerm = useCallback((val: string) => setSearchTerm(val), [setSearchTerm]);
+  const handleSearchTerm = useCallback(
+    (val: string) => setSearchTerm(val),
+    [setSearchTerm]
+  );
 
   const filterDatabsetByEnv = useCallback(
     (ds: RequestDataSet) =>
@@ -278,7 +281,6 @@ export const RequestDatasetEditor: FC<Props> = ({ setLoading }) => {
             onChange={updateToggleEnvironmentFilter}
           />
         </StyledDatasetActionsContainer>
-
         <SearchField
           aria-label="Request filter"
           className="group relative flex-1 py-3"
@@ -286,8 +288,8 @@ export const RequestDatasetEditor: FC<Props> = ({ setLoading }) => {
           onChange={debounce(handleSearchTerm, DEBOUNCE_MILLIS)}
         >
           <Input
-            placeholder="Search"
-            className="py-1 w-full pl-2 pr-7 rounded-sm border border-solid border-[--hl-sm] bg-[--color-bg] text-[--color-font] focus:outline-none focus:ring-1 focus:ring-[--hl-md] transition-colors"
+            placeholder="Search..."
+            className="py-1 w-full italic pl-2 pr-7 border-b border-solid border-[--hl-sm] rounded-sm bg-[--color-bg] text-[--color-font] transition-colors"
           />
           <div className="flex items-center px-2 absolute right-0 top-0 h-full">
             <Button className="flex group-data-[empty]:hidden items-center justify-center aspect-square w-5 aria-pressed:bg-[--hl-sm] rounded-sm text-[--color-font] hover:bg-[--hl-xs] focus:ring-inset ring-1 ring-transparent focus:ring-[--hl-md] transition-all text-sm">
