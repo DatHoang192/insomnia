@@ -1,13 +1,17 @@
-import React, { FC, useEffect, useState } from 'react';
+import React, { FC, useCallback, useEffect, useState } from 'react';
+import { Button, Input, SearchField } from 'react-aria-components';
 import { useRouteLoaderData } from 'react-router-dom';
 import styled from 'styled-components';
 
+import { DEBOUNCE_MILLIS } from '../../../../common/constants';
+import { debounce } from '../../../../common/misc';
 import * as models from '../../../../models';
 import { Request } from '../../../../models/request';
 import {
   REQUEST_DATASET_SETTING_COLLAPSE,
   RequestDataSet,
 } from '../../../../models/request-dataset';
+import { Icon } from '../../../components/icon';
 import { useRequestPatcher } from '../../../hooks/use-request';
 import { RequestLoaderData } from '../../../routes/request';
 import { WorkspaceLoaderData } from '../../../routes/workspace';
@@ -33,6 +37,7 @@ export const RequestDatasetEditor: FC<Props> = ({ setLoading }) => {
   const [baseDataset, setBaseDataset] = useState<RequestDataSet>();
   const [otherDatasets, setOtherDatasets] = useState<RequestDataSet[]>([]);
   const [renderCount, setRenderCount] = useState<number>(0);
+  const [searchTerm, setSearchTerm] = useState<string>('');
   const { activeRequest } = useRouteLoaderData(
     'request/:requestId'
   ) as RequestLoaderData;
@@ -111,7 +116,9 @@ export const RequestDatasetEditor: FC<Props> = ({ setLoading }) => {
   };
 
   const onDatasetChanged = async (dataset: RequestDataSet) => {
-    let updatingDataset = otherDatasets.filter(ds => ds._id === dataset._id)[0];
+    let updatingDataset = otherDatasets.filter(
+      ds => ds._id === dataset._id
+    )[0];
     if (updatingDataset && baseDataset) {
       updatingDataset = await models.requestDataset.update(updatingDataset, {
         environment: dataset.environment,
@@ -201,7 +208,9 @@ export const RequestDatasetEditor: FC<Props> = ({ setLoading }) => {
     dataset: RequestDataSet,
     toggle: boolean
   ) => {
-    let updatingDataset = otherDatasets.filter(ds => ds._id === dataset._id)[0];
+    let updatingDataset = otherDatasets.filter(
+      ds => ds._id === dataset._id
+    )[0];
     if (baseDataset && updatingDataset) {
       updatingDataset = await models.requestDataset.update(updatingDataset, {
         settings: {
@@ -215,6 +224,32 @@ export const RequestDatasetEditor: FC<Props> = ({ setLoading }) => {
       onChange(baseDataset, newDatasets);
     }
   };
+
+  const handleSearchTerm = useCallback(
+    (val: string) => setSearchTerm(val),
+    [setSearchTerm]
+  );
+
+  const filterDatabsetByEnv = useCallback(
+    (ds: RequestDataSet) =>
+      !activeRequest.settingDatasetFilter ||
+      !ds.applyEnv ||
+      ds.applyEnv === activeEnvironment?._id,
+    [activeEnvironment?._id, activeRequest.settingDatasetFilter]
+  );
+
+  const filterDatabsetBySearchTerm = useCallback(
+    (ds: RequestDataSet) => {
+      const sanitizedSearchTerm = searchTerm.trim().toLowerCase();
+      return (
+        ds.name.toLowerCase().includes(sanitizedSearchTerm) ||
+        Object.values(ds.environment).some(dsItem =>
+          dsItem.value.toLowerCase().includes(sanitizedSearchTerm)
+        )
+      );
+    },
+    [searchTerm]
+  );
 
   useEffect(() => {
     load();
@@ -235,7 +270,8 @@ export const RequestDatasetEditor: FC<Props> = ({ setLoading }) => {
           />
         )}
         <hr />
-        <StyledDatasetActionsContainer className="pod">
+
+        <StyledDatasetActionsContainer className="pod pt-3">
           <button className="btn btn--clicky faint" onClick={addNewDataSet}>
             Add new dataset
           </button>
@@ -245,13 +281,26 @@ export const RequestDatasetEditor: FC<Props> = ({ setLoading }) => {
             onChange={updateToggleEnvironmentFilter}
           />
         </StyledDatasetActionsContainer>
+        <SearchField
+          aria-label="Request filter"
+          className="group relative flex-1 py-3"
+          defaultValue=""
+          onChange={debounce(handleSearchTerm, DEBOUNCE_MILLIS)}
+        >
+          <Input
+            placeholder="Search..."
+            className="py-1 w-full italic pl-2 pr-7 border-b border-solid border-[--hl-sm] rounded-sm bg-[--color-bg] text-[--color-font] transition-colors"
+          />
+          <div className="flex items-center px-2 absolute right-0 top-0 h-full">
+            <Button className="flex group-data-[empty]:hidden items-center justify-center aspect-square w-5 aria-pressed:bg-[--hl-sm] rounded-sm text-[--color-font] hover:bg-[--hl-xs] focus:ring-inset ring-1 ring-transparent focus:ring-[--hl-md] transition-all text-sm">
+              <Icon icon="close" />
+            </Button>
+          </div>
+        </SearchField>
+
         {otherDatasets
-          .filter(
-            ds =>
-              !activeRequest.settingDatasetFilter ||
-              !ds.applyEnv ||
-              ds.applyEnv === activeEnvironment?._id
-          )
+          .filter(filterDatabsetByEnv)
+          .filter(filterDatabsetBySearchTerm)
           .map(dataset => (
             <DatasetRowEditor
               key={dataset._id + renderCount}
